@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+.env
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# SQLite (dev DB del backend)
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Docker
+.dockerignore.bak
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editores / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Node (por si algún día)
+node_modules/
