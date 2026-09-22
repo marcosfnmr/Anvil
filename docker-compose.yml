@@ -1,0 +1,14 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    image: anvil/backend:dev
+    environment:
+      ANVIL_DATABASE_URL: sqlite:////data/anvil.db
+      ANVIL_PLC_IMAGE: anvil/plc-s7:dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/data
+    restart: unless-stopped
