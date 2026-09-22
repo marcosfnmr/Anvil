@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101418" />
+    <title>Anvil — OT Scenario Builder</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/drawflow@0.0.60/dist/drawflow.min.css"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Anvil, inicio">
+          <span class="brand-mark" aria-hidden="true">A</span>
+          <span>
+            <strong>ANVIL</strong>
+            <small>OT SCENARIO BUILDER</small>
+          </span>
+        </a>
+
+        <div class="scenario-meta">
+          <label>
+            <span>Escenario</span>
+            <input id="scenario-name" type="text" value="Nueva línea OT" maxlength="80" />
+          </label>
+          <label>
+            <span>Red</span>
+            <input id="scenario-subnet" type="text" value="172.30.100.0/24" />
+          </label>
+        </div>
+
+        <div class="topbar-actions">
+          <div id="scenario-status" class="status-pill status-stopped">
+            <span class="status-dot"></span>
+            <span>Detenido</span>
+          </div>
+          <button id="save-button" class="button button-secondary" type="button">Guardar</button>
+          <button id="deploy-button" class="button button-primary" type="button">
+            Desplegar
+          </button>
+          <button id="stop-button" class="button button-danger" type="button" disabled>
+            Detener
+          </button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <aside class="left-panel panel">
+          <section class="panel-section scenarios-section">
+            <div class="section-heading">
+              <div>
+                <span class="eyebrow">PROYECTO</span>
+                <h2>Escenarios</h2>
+              </div>
+              <button id="new-scenario-button" class="icon-button" type="button" title="Nuevo escenario">
+                +
+              </button>
+            </div>
+            <div id="scenario-list" class="scenario-list" aria-live="polite"></div>
+          </section>
+
+          <section class="panel-section palette-section">
+            <div class="section-heading">
+              <div>
+                <span class="eyebrow">CATÁLOGO</span>
+                <h2>Dispositivos</h2>
+              </div>
+            </div>
+            <p class="section-help">Arrastra un dispositivo al lienzo.</p>
+            <div id="node-palette" class="node-palette"></div>
+          </section>
+
+          <section class="panel-footer">
+            <a href="/docs" target="_blank" rel="noreferrer">API /docs ↗</a>
+            <span id="api-indicator" class="api-indicator">Comprobando API…</span>
+          </section>
+        </aside>
+
+        <section class="canvas-panel" aria-label="Lienzo del escenario">
+          <div class="canvas-toolbar">
+            <div>
+              <span class="eyebrow">TOPOLOGÍA</span>
+              <strong id="canvas-summary">0 dispositivos</strong>
+            </div>
+            <div class="canvas-hint">Arrastra · selecciona · configura</div>
+          </div>
+          <div id="drawflow" class="drawflow-canvas"></div>
+          <div id="empty-canvas" class="empty-canvas">
+            <div class="empty-icon" aria-hidden="true">＋</div>
+            <strong>Construye tu escenario OT</strong>
+            <span>Arrastra un PLC desde el catálogo</span>
+          </div>
+        </section>
+
+        <aside class="right-panel panel">
+          <section class="panel-section inspector-heading">
+            <span class="eyebrow">INSPECTOR</span>
+            <h2>Configuración</h2>
+          </section>
+          <div id="inspector" class="inspector"></div>
+          <div class="right-panel-footer">
+            <button id="delete-scenario-button" class="text-danger" type="button" disabled>
+              Eliminar escenario
+            </button>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.60/dist/drawflow.min.js"></script>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
