@@ -1,0 +1,30 @@
+{
+  "plc_id": "plc-01",
+  "rack": 0,
+  "slot": 1,
+  "db_size": 32,
+  "components": [
+    {
+      "type": "valve",
+      "name": "valvula_principal",
+      "db": 1,
+      "byte_offset": 0,
+      "bit_offset": 0,
+      "initial_state": false
+    },
+    {
+      "type": "analog_sensor",
+      "name": "presion",
+      "db": 1,
+      "byte_offset": 2,
+      "unit": "bar",
+      "min_value": 0.0,
+      "max_value": 10.0,
+      "simulation": {
+        "mode": "sine_wave",
+        "period_seconds": 30,
+        "noise": 0.1
+      }
+    }
+  ]
+}
