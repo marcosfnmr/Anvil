@@ -10,6 +10,7 @@
       href="https://cdn.jsdelivr.net/npm/drawflow@0.0.60/dist/drawflow.min.css"
     />
     <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/events.css" />
   </head>
   <body>
     <div class="app-shell">
@@ -72,6 +73,19 @@
             </div>
             <p class="section-help">Arrastra un dispositivo al lienzo.</p>
             <div id="node-palette" class="node-palette"></div>
+          </section>
+
+          <section class="panel-section events-section">
+            <div class="section-heading">
+              <div>
+                <span class="eyebrow">TELEMETRÍA</span>
+                <h2>Actividad</h2>
+              </div>
+              <span id="event-connection" class="event-connection">Sin escenario</span>
+            </div>
+            <div id="event-log" class="event-log" aria-live="polite">
+              <div class="event-log-empty">Selecciona un escenario para recibir eventos.</div>
+            </div>
           </section>
 
           <section class="panel-footer">

@@ -1,5 +1,6 @@
 import { scenarioApi } from "./api.js";
 import { ScenarioCanvas } from "./canvas.js";
+import { ScenarioEventStream } from "./events.js";
 import { Inspector } from "./inspector.js";
 import { listNodeTypes } from "./nodes/registry.js";
 
@@ -15,6 +16,8 @@ const elements = {
   list: document.getElementById("scenario-list"),
   palette: document.getElementById("node-palette"),
   apiIndicator: document.getElementById("api-indicator"),
+  eventConnection: document.getElementById("event-connection"),
+  eventLog: document.getElementById("event-log"),
   save: document.getElementById("save-button"),
   deploy: document.getElementById("deploy-button"),
   stop: document.getElementById("stop-button"),
@@ -29,6 +32,7 @@ const state = {
   dirty: false,
   busy: false,
   scenarios: [],
+  activity: [],
 };
 
 let toastTimer;
@@ -67,6 +71,39 @@ function updateStatus(status, containers = []) {
   elements.status.querySelector("span:last-child").textContent = statusLabel(status);
   canvas.syncRuntimeStatus(containers);
   setBusy(state.busy);
+}
+
+function setEventConnection(label, mode = "") {
+  elements.eventConnection.textContent = label;
+  elements.eventConnection.className = `event-connection ${mode}`.trim();
+}
+
+function addActivity(message, tone = "") {
+  state.activity.unshift({
+    message,
+    tone,
+    time: new Date().toLocaleTimeString("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }),
+  });
+  state.activity = state.activity.slice(0, 12);
+  elements.eventLog.innerHTML = state.activity
+    .map(
+      (item) => `
+        <div class="event-item ${item.tone}">
+          <time>${item.time}</time>
+          <span>${escapeHtml(item.message)}</span>
+        </div>
+      `,
+    )
+    .join("");
+}
+
+function clearActivity(message = "Selecciona un escenario para recibir eventos.") {
+  state.activity = [];
+  elements.eventLog.innerHTML = `<div class="event-log-empty">${escapeHtml(message)}</div>`;
 }
 
 function markDirty() {
@@ -117,6 +154,44 @@ const canvas = new ScenarioCanvas(document.getElementById("drawflow"), {
   },
   onChange() {
     markDirty();
+  },
+});
+
+const eventStream = new ScenarioEventStream({
+  onOpen() {
+    setEventConnection("En vivo", "live");
+  },
+  onEvent(event) {
+    if (event.type === "error") {
+      addActivity(event.detail || "Error en el canal de eventos", "error");
+      showToast(event.detail || "Error en el canal de eventos", "error");
+      return;
+    }
+    if (event.scenario_id !== state.scenarioId) return;
+    if (event.type === "heartbeat") {
+      setEventConnection("En vivo", "live");
+      return;
+    }
+
+    const previousStatus = state.status;
+    updateStatus(event.status, event.containers);
+    const scenario = state.scenarios.find((item) => item.id === state.scenarioId);
+    if (scenario) scenario.status = event.status;
+    renderScenarioList();
+
+    if (event.type === "snapshot") {
+      addActivity(`Estado sincronizado: ${statusLabel(event.status)}`, "info");
+    } else if (previousStatus !== event.status) {
+      const tone = event.status === "running" ? "success" : event.status === "error" ? "error" : "";
+      addActivity(`Estado: ${statusLabel(event.status)}`, tone);
+    }
+  },
+  onReconnect(delay) {
+    setEventConnection("Reconectando", "reconnecting");
+    if (delay >= 4000) addActivity("Reconectando canal de eventos…", "error");
+  },
+  onClose() {
+    setEventConnection("Desconectado", "reconnecting");
   },
 });
 
@@ -192,12 +267,15 @@ async function loadScenarioList() {
 }
 
 function resetScenario() {
+  eventStream.disconnect();
   state.scenarioId = null;
   elements.name.value = "Nueva línea OT";
   elements.subnet.value = "172.30.100.0/24";
   canvas.clear();
   inspector.render(null);
   updateStatus("stopped");
+  setEventConnection("Sin escenario");
+  clearActivity();
   markClean();
   renderScenarioList();
   setBusy(false);
@@ -208,15 +286,18 @@ async function openScenario(scenarioId) {
   setBusy(true);
   try {
     const scenario = await scenarioApi.get(scenarioId);
+    eventStream.disconnect();
     state.scenarioId = scenario.id;
     elements.name.value = scenario.name;
     elements.subnet.value = scenario.network.subnet;
     canvas.load(scenario.devices);
     inspector.render(null);
     updateStatus(scenario.status);
+    clearActivity("Conectando con el escenario…");
+    setEventConnection("Conectando", "reconnecting");
+    eventStream.connect(scenario.id);
     markClean();
     renderScenarioList();
-    if (scenario.status !== "stopped") await refreshRuntimeStatus();
   } catch (error) {
     showToast(error.message, "error");
   } finally {
@@ -262,7 +343,11 @@ async function saveScenario({ silent = false } = {}) {
   updateStatus(saved.status);
   markClean();
   await loadScenarioList();
-  if (!silent) showToast("Escenario guardado");
+  eventStream.connect(saved.id);
+  if (!silent) {
+    addActivity("Escenario guardado", "success");
+    showToast("Escenario guardado");
+  }
   return saved;
 }
 
@@ -271,13 +356,18 @@ async function deployScenario() {
   try {
     const saved = await saveScenario({ silent: true });
     updateStatus("deploying");
+    addActivity("Orden de despliegue enviada", "info");
     const runtime = await scenarioApi.deploy(saved.id);
     updateStatus(runtime.status, runtime.containers);
     await loadScenarioList();
     showToast("Escenario desplegado correctamente");
   } catch (error) {
     showToast(error.message, "error");
-    if (state.scenarioId) await refreshRuntimeStatus().catch(() => {});
+    addActivity(error.message, "error");
+    if (state.scenarioId) {
+      const runtime = await scenarioApi.status(state.scenarioId).catch(() => null);
+      if (runtime) updateStatus(runtime.status, runtime.containers);
+    }
   } finally {
     setBusy(false);
   }
@@ -287,12 +377,14 @@ async function stopScenario() {
   if (!state.scenarioId) return;
   setBusy(true);
   try {
+    addActivity("Orden de parada enviada", "info");
     const runtime = await scenarioApi.stop(state.scenarioId);
     updateStatus(runtime.status, runtime.containers);
     await loadScenarioList();
     showToast("Escenario detenido y recursos liberados");
   } catch (error) {
     showToast(error.message, "error");
+    addActivity(error.message, "error");
   } finally {
     setBusy(false);
   }
@@ -303,6 +395,7 @@ async function removeScenario() {
   setBusy(true);
   try {
     await scenarioApi.remove(state.scenarioId);
+    eventStream.disconnect();
     await loadScenarioList();
     resetScenario();
     showToast("Escenario eliminado");
@@ -311,14 +404,6 @@ async function removeScenario() {
   } finally {
     setBusy(false);
   }
-}
-
-async function refreshRuntimeStatus() {
-  if (!state.scenarioId) return;
-  const requestedId = state.scenarioId;
-  const runtime = await scenarioApi.status(requestedId);
-  if (state.scenarioId !== requestedId) return;
-  updateStatus(runtime.status, runtime.containers);
 }
 
 function bindActions() {
@@ -365,12 +450,6 @@ async function initialize() {
     elements.apiIndicator.classList.add("offline");
     showToast(error.message, "error");
   }
-
-  setInterval(() => {
-    if (state.scenarioId && state.status !== "stopped" && !state.busy) {
-      refreshRuntimeStatus().catch((error) => showToast(error.message, "error"));
-    }
-  }, 4000);
 }
 
 initialize();

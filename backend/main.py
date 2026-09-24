@@ -24,7 +24,7 @@ def create_app(*, initialize_database: bool = True) -> FastAPI:
             create_db_and_tables()
         yield
 
-    application = FastAPI(title="Anvil API", version="0.3.0", lifespan=lifespan)
+    application = FastAPI(title="Anvil API", version="0.4.0", lifespan=lifespan)
     application.include_router(health_router)
     application.include_router(scenarios_router)
     application.mount(

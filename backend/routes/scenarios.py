@@ -1,16 +1,25 @@
-"""Scenario CRUD and lifecycle endpoints."""
+"""Scenario CRUD, lifecycle, and live-event endpoints."""
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Response,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
 from sqlmodel import Session
 
 from models.db import get_session
 from models.scenario import ScenarioCreate, ScenarioRead, ScenarioStatusRead, ScenarioUpdate
 from services.docker_manager import DockerManager, DockerManagerError
+from services.event_stream import stream_scenario_events
 from services.scenario_service import (
     ScenarioConflictError,
     ScenarioNotFoundError,
@@ -169,3 +178,45 @@ def scenario_status(
 
     service.set_status(scenario_key, result["status"])
     return ScenarioStatusRead.model_validate(result)
+
+
+@router.websocket("/{scenario_id}/events")
+async def scenario_events(
+    websocket: WebSocket,
+    scenario_id: UUID,
+    session: SessionDependency,
+    manager: DockerDependency,
+) -> None:
+    scenario_key = str(scenario_id)
+    service = ScenarioService(session)
+    await websocket.accept()
+
+    try:
+        service.get_record(scenario_key)
+    except ScenarioNotFoundError as error:
+        await websocket.send_json({"type": "error", "detail": str(error)})
+        await websocket.close(code=4404)
+        return
+
+    def status_provider() -> dict[str, Any]:
+        session.expire_all()
+        record = service.get_record(scenario_key)
+        runtime = manager.status(scenario_key)
+        docker_status = runtime["status"]
+
+        if docker_status == "stopped" and record.status in {"deploying", "error"}:
+            runtime["status"] = record.status
+        elif record.status != docker_status:
+            service.set_status(scenario_key, docker_status)
+        return runtime
+
+    try:
+        await stream_scenario_events(websocket, scenario_key, status_provider)
+    except ScenarioNotFoundError as error:
+        await websocket.send_json({"type": "error", "detail": str(error)})
+        await websocket.close(code=4404)
+    except DockerManagerError as error:
+        await websocket.send_json({"type": "error", "detail": str(error)})
+        await websocket.close(code=1011)
+    except WebSocketDisconnect:
+        return
