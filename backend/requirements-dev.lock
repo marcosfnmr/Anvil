@@ -1,0 +1,4 @@
+-r requirements.lock
+httpcore2==2.13.1
+httpx2==2.13.1
+truststore==0.10.4

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 import docker
@@ -71,6 +72,9 @@ class DockerManager:
                 created_containers.append(container)
                 network.connect(container, ipv4_address=runtime_device["ip"])
                 container.start()
+
+            for container in created_containers:
+                self._wait_until_healthy(container)
         except DockerManagerError:
             self._cleanup_failed_deploy(network, created_containers)
             raise
@@ -111,7 +115,7 @@ class DockerManager:
                     {
                         "node_id": container.labels.get("anvil.node_id", "unknown"),
                         "name": container.name,
-                        "status": container.status,
+                        "status": self._container_status(container),
                     }
                 )
         except DockerException as error:
@@ -124,8 +128,10 @@ class DockerManager:
             overall_status = "stopped"
         elif statuses == {"running"}:
             overall_status = "running"
-        elif statuses & {"dead", "exited"}:
+        elif statuses & {"dead", "exited", "unhealthy"}:
             overall_status = "error"
+        elif statuses <= {"created", "restarting", "starting"}:
+            overall_status = "deploying"
         else:
             overall_status = "partial"
 
@@ -135,10 +141,83 @@ class DockerManager:
             "containers": containers,
         }
 
+    def cleanup_orphans(self, known_scenario_ids: set[str]) -> dict[str, int]:
+        """Remove only Anvil-labelled resources with no persisted scenario."""
+
+        removed_containers = 0
+        removed_networks = 0
+        try:
+            containers = self.client.containers.list(
+                all=True,
+                filters={"label": "anvil.managed=true"},
+            )
+            for container in containers:
+                scenario_id = container.labels.get("anvil.scenario_id")
+                if scenario_id and scenario_id not in known_scenario_ids:
+                    container.remove(force=True)
+                    removed_containers += 1
+
+            networks = self.client.networks.list(
+                filters={"label": "anvil.managed=true"},
+            )
+            for network in networks:
+                labels = network.attrs.get("Labels") or {}
+                scenario_id = labels.get("anvil.scenario_id")
+                if scenario_id and scenario_id not in known_scenario_ids:
+                    network.remove()
+                    removed_networks += 1
+        except DockerException as error:
+            raise DockerManagerError(
+                f"Unable to clean orphaned resources: {_docker_error_message(error)}"
+            ) from error
+
+        return {"containers": removed_containers, "networks": removed_networks}
+
     def _scenario_containers(self, scenario_id: str) -> list[Any]:
         return self.client.containers.list(
             all=True,
             filters={"label": f"anvil.scenario_id={scenario_id}"},
+        )
+
+    @staticmethod
+    def _container_status(container: Any) -> str:
+        attrs = container.attrs if isinstance(container.attrs, dict) else {}
+        state = attrs.get("State") if isinstance(attrs.get("State"), dict) else {}
+        health = state.get("Health") if isinstance(state.get("Health"), dict) else {}
+        health_status = health.get("Status")
+        if health_status in {"starting", "unhealthy"}:
+            return health_status
+        return container.status
+
+    @staticmethod
+    def _wait_until_healthy(container: Any, timeout_seconds: float = 20.0) -> None:
+        container.reload()
+        attrs = container.attrs if isinstance(container.attrs, dict) else {}
+        state = attrs.get("State") if isinstance(attrs.get("State"), dict) else {}
+        health = state.get("Health") if isinstance(state.get("Health"), dict) else None
+        if health is None:
+            return
+
+        deadline = time.monotonic() + timeout_seconds
+        while time.monotonic() < deadline:
+            status = health.get("Status")
+            if status == "healthy":
+                return
+            if status == "unhealthy":
+                logs = health.get("Log") or []
+                detail = logs[-1].get("Output", "") if logs else ""
+                raise DockerManagerError(
+                    f"Container '{container.name}' is unhealthy: {detail.strip()}"
+                )
+            time.sleep(0.25)
+            container.reload()
+            attrs = container.attrs if isinstance(container.attrs, dict) else {}
+            state = attrs.get("State") if isinstance(attrs.get("State"), dict) else {}
+            health = state.get("Health") if isinstance(state.get("Health"), dict) else {}
+
+        raise DockerManagerError(
+            f"Container '{container.name}' did not become healthy within "
+            f"{timeout_seconds:g} seconds"
         )
 
     @staticmethod

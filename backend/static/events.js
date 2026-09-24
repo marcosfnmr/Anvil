@@ -49,9 +49,13 @@ export class ScenarioEventStream {
       }
     });
 
-    socket.addEventListener("close", () => {
+    socket.addEventListener("close", (event) => {
       if (generation !== this.generation || !this.scenarioId) return;
-      this.onClose();
+      this.onClose(event);
+      if ([1000, 1008, 4404].includes(event.code)) {
+        this.scenarioId = null;
+        return;
+      }
       this.scheduleReconnect(generation);
     });
 

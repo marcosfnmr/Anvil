@@ -1,5 +1,5 @@
-fastapi>=0.115,<1.0
-uvicorn[standard]>=0.32,<1.0
-sqlmodel>=0.0.22,<1.0
-docker>=7.1,<8.0
-pydantic>=2.10,<3.0
+fastapi==0.141.1
+uvicorn[standard]==0.53.0
+sqlmodel==0.0.46
+docker==7.2.0
+pydantic==2.13.5

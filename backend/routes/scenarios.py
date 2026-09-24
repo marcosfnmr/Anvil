@@ -16,9 +16,10 @@ from fastapi import (
 )
 from sqlmodel import Session
 
+from dependencies import DockerDependency, get_docker_manager
 from models.db import get_session
 from models.scenario import ScenarioCreate, ScenarioRead, ScenarioStatusRead, ScenarioUpdate
-from services.docker_manager import DockerManager, DockerManagerError
+from services.docker_manager import DockerManagerError
 from services.event_stream import stream_scenario_events
 from services.scenario_service import (
     ScenarioConflictError,
@@ -29,19 +30,6 @@ from services.scenario_service import (
 
 router = APIRouter(prefix="/api/scenarios", tags=["scenarios"])
 SessionDependency = Annotated[Session, Depends(get_session)]
-
-
-def get_docker_manager() -> DockerManager:
-    try:
-        return DockerManager()
-    except DockerManagerError as error:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=str(error),
-        ) from error
-
-
-DockerDependency = Annotated[DockerManager, Depends(get_docker_manager)]
 
 
 def _not_found(error: ScenarioNotFoundError) -> HTTPException:
@@ -198,25 +186,22 @@ async def scenario_events(
         await websocket.close(code=4404)
         return
 
-    def status_provider() -> dict[str, Any]:
-        session.expire_all()
-        record = service.get_record(scenario_key)
-        runtime = manager.status(scenario_key)
-        docker_status = runtime["status"]
+    database_bind = session.get_bind()
 
-        if docker_status == "stopped" and record.status in {"deploying", "error"}:
-            runtime["status"] = record.status
-        elif record.status != docker_status:
-            service.set_status(scenario_key, docker_status)
-        return runtime
+    def status_provider() -> dict[str, Any]:
+        with Session(database_bind) as event_session:
+            event_service = ScenarioService(event_session)
+            record = event_service.get_record(scenario_key)
+            runtime = manager.status(scenario_key)
+            docker_status = runtime["status"]
+
+            if docker_status == "stopped" and record.status in {"deploying", "error"}:
+                runtime["status"] = record.status
+            elif record.status != docker_status:
+                event_service.set_status(scenario_key, docker_status)
+            return runtime
 
     try:
         await stream_scenario_events(websocket, scenario_key, status_provider)
-    except ScenarioNotFoundError as error:
-        await websocket.send_json({"type": "error", "detail": str(error)})
-        await websocket.close(code=4404)
-    except DockerManagerError as error:
-        await websocket.send_json({"type": "error", "detail": str(error)})
-        await websocket.close(code=1011)
     except WebSocketDisconnect:
         return

@@ -54,6 +54,41 @@ class DockerManagerTests(unittest.TestCase):
         container.remove.assert_called_once_with(force=True)
         network.remove.assert_called_once_with()
 
+    def test_unhealthy_container_marks_scenario_as_error(self) -> None:
+        client = Mock()
+        client.ping.return_value = True
+        container = Mock()
+        container.labels = {"anvil.node_id": "plc-1"}
+        container.name = "anvil-plc-1"
+        container.status = "running"
+        container.attrs = {"State": {"Health": {"Status": "unhealthy"}}}
+        client.containers.list.return_value = [container]
+        manager = DockerManager(client=client)
+
+        result = manager.status("scenario-id")
+
+        self.assertEqual(result["status"], "error")
+        self.assertEqual(result["containers"][0]["status"], "unhealthy")
+
+    def test_cleanup_only_removes_unknown_anvil_resources(self) -> None:
+        client = Mock()
+        client.ping.return_value = True
+        known = Mock(labels={"anvil.scenario_id": "known"})
+        orphan = Mock(labels={"anvil.scenario_id": "orphan"})
+        known_network = Mock(attrs={"Labels": {"anvil.scenario_id": "known"}})
+        orphan_network = Mock(attrs={"Labels": {"anvil.scenario_id": "orphan"}})
+        client.containers.list.return_value = [known, orphan]
+        client.networks.list.return_value = [known_network, orphan_network]
+        manager = DockerManager(client=client)
+
+        result = manager.cleanup_orphans({"known"})
+
+        known.remove.assert_not_called()
+        known_network.remove.assert_not_called()
+        orphan.remove.assert_called_once_with(force=True)
+        orphan_network.remove.assert_called_once_with()
+        self.assertEqual(result, {"containers": 1, "networks": 1})
+
 
 if __name__ == "__main__":
     unittest.main()

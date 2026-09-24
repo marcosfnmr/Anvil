@@ -6,9 +6,11 @@ services:
     environment:
       ANVIL_DATABASE_URL: sqlite:////data/anvil.db
       ANVIL_PLC_IMAGE: anvil/plc-s7:dev
+      ANVIL_CLEANUP_ORPHANS: "true"
     ports:
       - "8000:8000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/data
     restart: unless-stopped
+    stop_grace_period: 15s

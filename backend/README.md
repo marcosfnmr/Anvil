@@ -1,29 +1,27 @@
 # Backend de Anvil
 
-API FastAPI de la fase 2. Persiste escenarios en SQLite y crea una red Docker
-aislada por escenario. Los offsets S7 se calculan internamente y nunca forman
-parte del contrato público de la API.
+FastAPI sirve la API, el editor estático y el canal WebSocket de Anvil. Persiste
+los escenarios en SQLite y crea una red Docker aislada para cada escenario.
 
-## Ejecutar con Docker CLI
+## Ejecutar
 
 La imagen del PLC debe existir antes de arrancar el backend:
 
 ```bash
 docker build -t anvil/plc-s7:dev ./plc
-docker compose build backend
-docker compose up -d backend
+docker compose up -d --build
 curl http://localhost:8000/api/health
+curl http://localhost:8000/api/ready
 ```
 
-La documentación interactiva queda disponible en
-`http://localhost:8000/docs`. Para detener el backend:
+- `/api/health` comprueba que el proceso HTTP responde.
+- `/api/ready` comprueba acceso a SQLite y al daemon Docker.
+- `/docs` muestra OpenAPI.
+- `/api/scenarios/{id}/events` entrega estado en vivo por WebSocket.
 
-```bash
-docker compose down
-```
-
-`docker-compose.yml` monta `/var/run/docker.sock` porque el backend crea y
-elimina las redes y contenedores de cada escenario mediante la API de Docker.
+Al arrancar, el backend sincroniza los estados persistidos con Docker. Si
+`ANVIL_CLEANUP_ORPHANS=true`, también elimina únicamente contenedores y redes
+con etiquetas de Anvil cuyo escenario ya no existe.
 
 ## Pruebas
 
@@ -33,3 +31,9 @@ source .venv/bin/activate
 python -m pip install -r backend/requirements-dev.txt
 python -m unittest discover -s backend/tests -v
 ```
+
+## Seguridad
+
+El socket Docker montado en el contenedor otorga un nivel de acceso equivalente
+al administrador del host. No publiques este servicio fuera de una red
+confiable sin añadir autenticación, TLS y aislamiento adicional.
