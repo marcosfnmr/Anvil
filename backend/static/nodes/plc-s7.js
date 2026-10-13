@@ -1,13 +1,5 @@
 import { registerNodeType } from "./registry.js?v=field-live-3";
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
+import { renderDeviceCard } from "./card.js?v=canvas-node-cards-20261013";
 
 function uniqueNodeId(index) {
   if (globalThis.crypto?.randomUUID) {
@@ -55,21 +47,16 @@ registerNodeType("plc-s7", {
   render(data) {
     const componentCount = data.config?.components?.length || 0;
     const logicCount = (data.config?.control_rules?.length || 0) + (data.config?.boolean_rules?.length || 0) + (data.config?.timers?.length || 0) + (data.config?.latches?.length || 0) + (data.config?.counters?.length || 0) + (data.config?.sequences?.length || 0);
-    return `
-      <article class="device-node">
-        <header class="device-node-header">
-          <span class="device-node-icon">S7</span>
-          <span class="device-node-title">
-            <strong>${escapeHtml(data.name)}</strong>
-            <small>${escapeHtml(data.node_id)}</small>
-          </span>
-          <span class="node-state" title="Estado del contenedor"></span>
-        </header>
-        <div class="device-node-body">
-          <span>${escapeHtml(data.ip)}</span>
-          <span>${componentCount} señales · ${logicCount} bloques</span>
-        </div>
-      </article>
-    `;
+    return renderDeviceCard({
+      type: "plc-s7",
+      name: data.name,
+      icon: "S7",
+      kind: "CONTROLADOR · SIEMENS S7",
+      ip: data.ip,
+      metrics: [
+        { label: "Señales", value: componentCount },
+        { label: "Lógica", value: `${logicCount} bloques` },
+      ],
+    });
   },
 });

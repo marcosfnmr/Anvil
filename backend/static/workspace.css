@@ -57,8 +57,8 @@ html, body { min-width: 0; height: 100%; overflow: hidden; }
 .network-setting input { width: 170px; min-height: 36px; font-size: 12px; }
 .empty-canvas .empty-icon { display: none; }
 .empty-canvas h1 { font-size: 28px; }
-.device-node-title small { display: none; }
-.drawflow .drawflow-node { border-radius: 12px; width: 250px; }
+.device-node-title small { display: block; }
+.drawflow .drawflow-node { border-radius: 12px; width: 278px; }
 .page-config .inspector-heading { padding: 0; border: 0; flex-shrink: 0; }
 .device-picker { margin: 0; max-width: 460px; }
 .page-config .inspector { padding: 0; flex: none; max-height: none; overflow: visible; }

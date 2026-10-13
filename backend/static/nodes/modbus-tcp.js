@@ -1,13 +1,5 @@
 import { registerNodeType } from "./registry.js?v=field-live-3";
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
+import { renderDeviceCard } from "./card.js?v=canvas-node-cards-20261013";
 
 function uniqueNodeId(index) {
   if (globalThis.crypto?.randomUUID) return `modbus-${crypto.randomUUID().slice(0, 8)}`;
@@ -50,15 +42,22 @@ registerNodeType("modbus-tcp", {
     };
   },
   render(data) {
-    const count = data.config?.points?.length || 0;
-    return `
-      <article class="device-node">
-        <header class="device-node-header">
-          <span class="device-node-icon">MB</span>
-          <span class="device-node-title"><strong>${escapeHtml(data.name)}</strong><small>${escapeHtml(data.node_id)}</small></span>
-          <span class="node-state" title="Estado del contenedor"></span>
-        </header>
-        <div class="device-node-body"><span>${escapeHtml(data.config?.transport === "rtu" ? `RTU · túnel ${data.ip}:${data.config?.port}` : `${data.ip}:${data.config?.port}`)}</span><span>${count} puntos</span></div>
-      </article>`;
+    const transport = data.config?.transport === "rtu" ? "RTU" : "TCP";
+    const endpoint = data.config?.transport === "rtu"
+      ? `Túnel ${data.ip}:${data.config?.port}`
+      : `${data.ip}:${data.config?.port}`;
+    const points = data.config?.points || [];
+    return renderDeviceCard({
+      type: "modbus-tcp",
+      name: data.name,
+      icon: "MB",
+      kind: `SERVIDOR · MODBUS ${transport}`,
+      ip: endpoint,
+      endpointLabel: "Endpoint",
+      metrics: [
+        { label: "Puntos", value: points.length },
+        { label: "Unit ID", value: data.config?.unit_id ?? 1 },
+      ],
+    });
   },
 });

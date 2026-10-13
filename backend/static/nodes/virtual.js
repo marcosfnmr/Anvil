@@ -1,13 +1,5 @@
 import { registerNodeType } from "./registry.js?v=field-live-3";
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
+import { renderDeviceCard } from "./card.js?v=canvas-node-cards-20261013";
 
 const roles = [
   ["hmi", "HMI", "HMI", "Lee valores de PLC S7 y Modbus configurados"],
@@ -36,11 +28,40 @@ for (const [type, label, icon, summary] of roles) {
       };
     },
     render(data) {
-      const detail = data.device_type === "scada"
-        ? `Sondeo ${Number(data.config?.poll_interval_ms || 1000)} ms · ${(data.config?.target_node_ids || "").split(",").filter(Boolean).length} objetivos`
-        : data.device_type === "ethernet-switch" ? `Bridge L2 de zona · ${Number(data.config?.switch_port_capacity || 24)} puertos`
-        : data.config?.summary;
-      return `<article class="device-node"><header class="device-node-header"><span class="device-node-icon">${icon}</span><span class="device-node-title"><strong>${escapeHtml(data.name)}</strong><small>${escapeHtml(data.node_id)}</small></span><span class="node-state"></span></header><div class="device-node-body"><span>${escapeHtml(data.ip)}</span><span>${escapeHtml(detail)}</span></div></article>`;
+      const kind = data.device_type === "hmi" ? "Operación · HMI"
+        : data.device_type === "scada" ? "Supervisión · SCADA"
+          : data.device_type === "ethernet-switch" ? "Conmutación · Ethernet"
+            : data.device_type === "engineering-station" ? "Puesto · Ingeniería"
+              : data.device_type === "attacker-station" ? "Puesto · Participante"
+                : `${label} · elemento lógico`;
+      const targets = (data.config?.target_node_ids || "").split(",").filter(Boolean).length;
+      const metrics = data.device_type === "scada"
+        ? [
+            { label: "Sondeo", value: `${Number(data.config?.poll_interval_ms || 1000)} ms` },
+            { label: "Fuentes", value: targets },
+          ]
+        : data.device_type === "ethernet-switch"
+          ? [
+              { label: "Puertos", value: Number(data.config?.switch_port_capacity || 24) },
+              { label: "Red", value: "Bridge L2" },
+            ]
+          : data.device_type === "hmi"
+            ? [
+                { label: "Fuentes", value: targets },
+                { label: "Vista", value: "Operación" },
+              ]
+            : [
+                { label: "Perfil", value: label },
+                { label: "Acceso", value: data.external_access ? "Publicado" : "Interno" },
+              ];
+      return renderDeviceCard({
+        type: data.device_type,
+        name: data.name,
+        icon,
+        kind,
+        ip: data.ip,
+        metrics,
+      });
     },
   });
 }

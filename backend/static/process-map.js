@@ -157,7 +157,7 @@ export class ProcessMap {
     const nodes = Object.entries(this.canvas.exportNodes()).filter(([, node]) => !node.data.object_id);
     this.renderNetworkConnections(nodes);
     const keys = new Set();
-    const occupied = nodes.map(([, node]) => ({ x: node.pos_x, y: node.pos_y, w: 270, h: 125 }));
+    const occupied = nodes.map(([, node]) => ({ x: node.pos_x, y: node.pos_y, w: 290, h: 145 }));
     this.fields.innerHTML = nodes.flatMap(([id, node]) => {
       if (independent) return []; // Physical nodes replace the legacy register/component overlay.
       const occurrences = new Map();
@@ -170,10 +170,10 @@ export class ProcessMap {
         let position = this.positions[key];
         if (!position) {
           position = { x: node.pos_x + 300, y: node.pos_y + index * 165 };
-          while (occupied.some((r) => position.x < r.x+r.w+20 && position.x+255+20 > r.x && position.y < r.y+r.h+20 && position.y+155+20 > r.y)) position.y += 175;
+          while (occupied.some((r) => position.x < r.x+r.w+24 && position.x+270+24 > r.x && position.y < r.y+r.h+24 && position.y+190+24 > r.y)) position.y += 210;
           this.positions[key] = position;
         }
-        occupied.push({ ...position, w: 255, h: 155 });
+        occupied.push({ ...position, w: 270, h: 190 });
         return `<article class="field-node" tabindex="0" data-field-key="${escape(key)}" data-parent-id="${escape(node.data.node_id)}" data-parent-drawflow="${id}" data-component-index="${index}" data-component-type="${escape(component.type)}" aria-label="${escape(labels[component.type] || component.type)} ${escape(component.name)} de ${escape(node.data.name)}"><header><span class="field-icon" aria-hidden="true">${icons[component.type] || 'IO'}</span><div><strong>${escape(component.name)}</strong><small>${escape(labels[component.type] || component.type)} · ${escape(node.data.name)}</small></div></header><div class="field-values">Sin lectura</div><footer><button type="button" data-configure-legacy>Configurar</button><small>Integrado en PLC · escenario anterior</small><button type="button" data-workspace-view="catalog">Añadir independiente</button></footer></article>`;
       });
     }).join('');

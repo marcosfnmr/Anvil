@@ -13,9 +13,9 @@ import { clearHmiInputEdited, markHmiInputEdited, updateHmiLiveView, updateHmiSy
 import { ParticipantTerminal } from "./participant-terminal.js?v=participant-terminal-1";
 import { scadaTrend } from "./scada-trend.mjs?v=scada-quality-gaps-1";
 
-import "./nodes/plc-s7.js?v=field-live-3";
-import "./nodes/modbus-tcp.js?v=field-live-3";
-import "./nodes/virtual.js?v=engineering-station-1";
+import "./nodes/plc-s7.js?v=canvas-node-cards-20261013";
+import "./nodes/modbus-tcp.js?v=canvas-node-cards-20261013";
+import "./nodes/virtual.js?v=canvas-node-cards-20261013";
 import "./components/valve.js?v=field-live-3";
 import "./components/analog_sensor.js?v=field-seed-1";
 import "./components/remote_input.js?v=field-live-3";

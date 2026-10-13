@@ -301,6 +301,12 @@ export class ScenarioCanvas {
   }
 
   syncRuntimeStatus(containers = []) {
+    const statusLabels = {
+      created: "Preparado", running: "En marcha", paused: "En pausa",
+      restarting: "Reiniciando", starting: "Iniciando", exited: "Detenido",
+      dead: "Detenido", unhealthy: "Sin salud", missing: "No encontrado",
+      error: "Error",
+    };
     const statusByNode = new Map(containers.map((item) => [item.node_id, item]));
     Object.entries(this.exportNodes()).forEach(([id, node]) => {
       const element = this.element.querySelector(`#node-${id}`);
@@ -313,7 +319,9 @@ export class ScenarioCanvas {
       const indicator = element.querySelector(".node-state");
       if (indicator) {
         const detail = runtime?.health_error || runtime?.runtime_error;
-        indicator.title = detail ? `${runtime.status}: ${detail}` : `Estado del contenedor: ${runtime?.status || "sin desplegar"}`;
+        const label = statusLabels[runtime?.status] || "Sin desplegar";
+        indicator.textContent = label;
+        indicator.title = detail ? `${label}: ${detail}` : `Estado del contenedor: ${label}`;
         indicator.setAttribute("aria-label", indicator.title);
       }
       let metrics = element.querySelector("[data-runtime-metrics]");

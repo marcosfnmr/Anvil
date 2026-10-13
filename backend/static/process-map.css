@@ -14,6 +14,13 @@
 .field-node footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
 .field-node footer small { width: 100%; order: -1; }
 .field-node button { border: 1px solid #718698; background: #233244; color: #fff; border-radius: 6px; padding: 5px 8px; font-size: 12px; cursor: pointer; }
+.field-node { box-sizing: border-box; width: 270px; min-height: 150px; padding: 14px; border-color: #61788c; background: #172432; box-shadow: 0 12px 28px #0008; }
+.field-node header { gap: 12px; }
+.field-node strong { font-size: 15px; line-height: 1.35; }
+.field-node small { font-size: 12px; line-height: 1.4; }
+.field-icon { width: 42px; height: 42px; font-size: 15px; }
+.field-values { min-height: 42px; padding: 11px 0; font-size: 14px; line-height: 1.5; }
+.field-node button { min-height: 34px; padding: 6px 9px; font-size: 13px; }
 .process-links { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .map-link path { fill: none; stroke-width: 2; }
 .map-link path { stroke-linecap: round; stroke-linejoin: round; }

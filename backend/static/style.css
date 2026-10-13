@@ -530,61 +530,114 @@ select:focus {
 }
 
 .device-node {
-  overflow: hidden;
+  display: grid;
+  gap: 11px;
+  min-width: 0;
+  padding: 13px;
   border-radius: inherit;
 }
 
 .device-node-header {
-  display: grid;
-  grid-template-columns: 38px 1fr auto;
+  display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 12px;
-  border-bottom: 1px solid var(--line);
-  background: linear-gradient(135deg, rgba(100, 168, 255, 0.12), rgba(100, 168, 255, 0.02));
+  gap: 11px;
+  min-width: 0;
 }
 
 .device-node-icon {
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
   place-items: center;
-  border: 1px solid rgba(100, 168, 255, 0.4);
-  border-radius: 7px;
-  color: var(--blue);
-  font-size: 11px;
+  border: 1px solid var(--node-icon-border, rgba(100, 168, 255, 0.4));
+  border-radius: 11px;
+  background: var(--node-icon-background, rgba(100, 168, 255, 0.08));
+  color: var(--node-accent, var(--blue));
+  font-size: 10px;
   font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.device-node-title {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
 }
 
 .device-node-title strong,
 .device-node-title small {
+  min-width: 0;
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .device-node-title strong {
-  font-size: 12px;
+  display: -webkit-box;
+  color: #f5f8fb;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .device-node-title small {
-  margin-top: 2px;
-  color: var(--muted);
+  color: var(--node-accent, #aebdca);
   font-size: 9px;
-  letter-spacing: 0.08em;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.device-node-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding-top: 9px;
+  border-top: 1px solid #34404c;
 }
 
 .node-state {
-  width: 8px;
-  height: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  max-width: 112px;
+  padding: 4px 7px;
+  border: 1px solid #43515f;
+  border-radius: 999px;
+  background: #202a34;
+  color: #d7e0e8;
+  font-size: 10px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.node-state::before {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
   border-radius: 50%;
-  background: #68747d;
+  background: #9aa7b3;
+  content: "";
 }
 
 .drawflow-node.runtime-running .node-state {
+  border-color: #318866;
+  background: #16392e;
+  color: #c9ffe8;
+}
+
+.drawflow-node.runtime-running .node-state::before {
   background: var(--success);
-  box-shadow: 0 0 10px var(--success);
+  box-shadow: 0 0 7px var(--success);
 }
 
 .drawflow-node.runtime-error .node-state,
@@ -592,14 +645,31 @@ select:focus {
 .drawflow-node.runtime-dead .node-state,
 .drawflow-node.runtime-unhealthy .node-state,
 .drawflow-node.runtime-missing .node-state {
+  border-color: #a24f51;
+  background: #3c2025;
+  color: #ffd6d4;
+}
+
+.drawflow-node.runtime-error .node-state::before,
+.drawflow-node.runtime-exited .node-state::before,
+.drawflow-node.runtime-dead .node-state::before,
+.drawflow-node.runtime-unhealthy .node-state::before,
+.drawflow-node.runtime-missing .node-state::before {
   background: var(--danger);
-  box-shadow: 0 0 10px var(--danger);
+  box-shadow: 0 0 7px var(--danger);
 }
 
 .drawflow-node.runtime-starting .node-state,
 .drawflow-node.runtime-restarting .node-state {
+  border-color: #9c743d;
+  background: #3d301c;
+  color: #ffe2ad;
+}
+
+.drawflow-node.runtime-starting .node-state::before,
+.drawflow-node.runtime-restarting .node-state::before {
   background: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
+  box-shadow: 0 0 7px var(--accent);
 }
 
 .node-health-status { display: block; margin: 4px 0; color: var(--accent-bright); }
@@ -616,17 +686,77 @@ select:focus {
 
 .device-node-body {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  padding: 11px 12px;
-  color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 10px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 7px;
 }
 
-.device-node-body span:last-child {
-  color: #b7c2c9;
+.device-node-metric {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid #2b3743;
+  border-radius: 8px;
+  background: #111922;
 }
+
+.device-node-metric span,
+.device-node-endpoint small {
+  overflow: hidden;
+  color: #aab8c5;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.device-node-metric strong,
+.device-node-endpoint strong {
+  overflow: hidden;
+  color: #f1f5f8;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.device-node-endpoint {
+  display: grid;
+  justify-items: end;
+  gap: 3px;
+  min-width: 0;
+}
+
+.drawflow-node.node-plc-s7 { --node-accent: #70d2ff; --node-icon-border: #407e99; --node-icon-background: #163546; }
+.drawflow-node.node-modbus-tcp { --node-accent: #8de0c4; --node-icon-border: #397f6a; --node-icon-background: #17372f; }
+.drawflow-node.node-hmi { --node-accent: #d5a8ff; --node-icon-border: #7854a1; --node-icon-background: #302140; }
+.drawflow-node.node-scada { --node-accent: #85d7f0; --node-icon-border: #3c8194; --node-icon-background: #173640; }
+.drawflow-node.node-ethernet-switch { --node-accent: #b2df8c; --node-icon-border: #678b46; --node-icon-background: #28371f; }
+.drawflow-node.node-engineering-station,
+.drawflow-node.node-attacker-station { --node-accent: #ffc77d; --node-icon-border: #98663c; --node-icon-background: #3b2b1b; }
+
+.device-node--gateway,
+.device-node--firewall { --node-accent: #d7b0ff; --node-icon-border: #7854a1; --node-icon-background: #302140; }
+
+.drawflow-node.node-plc-s7,
+.drawflow-node.node-modbus-tcp,
+.drawflow-node.node-hmi,
+.drawflow-node.node-scada,
+.drawflow-node.node-gateway,
+.drawflow-node.node-firewall,
+.drawflow-node.node-ethernet-switch,
+.drawflow-node.node-engineering-station,
+.drawflow-node.node-attacker-station { border-color: color-mix(in srgb, var(--node-accent) 38%, #34404a); }
+
+.drawflow-node.runtime-error .node-state,
+.drawflow-node.runtime-exited .node-state,
+.drawflow-node.runtime-dead .node-state,
+.drawflow-node.runtime-unhealthy .node-state,
+.drawflow-node.runtime-missing .node-state { color: #ffd6d4; }
 
 .empty-canvas {
   position: absolute;
