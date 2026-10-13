@@ -1,6 +1,6 @@
 import { nextAvailableIp } from "./editor-utils.js?v=field-live-3";
 import { scenarioApi } from "./api.js?v=rf26-service-inventory-1";
-import { ScenarioCanvas } from "./canvas.js?v=runtime-metrics-quality-1";
+import { ScenarioCanvas } from "./canvas.js?v=canvas-links-live-20261013";
 import { ScenarioEventStream } from "./events.js?v=field-live-3";
 import { Inspector } from "./inspector.js?v=rf26-service-inventory-1";
 import { ScenarioLogStream } from "./logs.js?v=field-live-3";

@@ -1,5 +1,5 @@
 import { MapViewport } from "./map-viewport.js?v=field-live-3";
-import { ProcessMap } from "./process-map.js?v=hmi-map-compact-ux-20261010";
+import { ProcessMap } from "./process-map.js?v=canvas-links-live-20261013";
 import { getNodeType } from "./nodes/registry.js?v=field-live-3";
 import { s7Signals } from "./components/remote_input.js?v=field-live-3";
 
@@ -75,7 +75,24 @@ export class ScenarioCanvas {
       this.processMap?.render();
       this.onFieldChange?.();
     });
-    this.editor.on("nodeMoved", () => { this.processMap?.drawLinks(); this.onFieldChange?.(); this.onChange(); });
+    this.editor.on("mouseMove", () => {
+      // Drawflow emits nodeMoved only when the drag ends. Its own connection
+      // paths move continuously, but Anvil's SVG relationships otherwise lag
+      // behind until mouseup. Coalesce both custom link layers to one frame.
+      if (!this.editor.drag || this.linkRefreshFrame) return;
+      this.linkRefreshFrame = requestAnimationFrame(() => {
+        this.linkRefreshFrame = null;
+        this.processMap?.drawLinks();
+        this.onFieldChange?.();
+      });
+    });
+    this.editor.on("nodeMoved", () => {
+      if (this.linkRefreshFrame) cancelAnimationFrame(this.linkRefreshFrame);
+      this.linkRefreshFrame = null;
+      this.processMap?.drawLinks();
+      this.onFieldChange?.();
+      this.onChange();
+    });
     this.processMap = new ProcessMap(this);
     this.viewport = new MapViewport(this);
 

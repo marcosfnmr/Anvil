@@ -14,8 +14,9 @@
 .field-node footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
 .field-node footer small { width: 100%; order: -1; }
 .field-node button { border: 1px solid #718698; background: #233244; color: #fff; border-radius: 6px; padding: 5px 8px; font-size: 12px; cursor: pointer; }
-.process-links { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; pointer-events: none; }
+.process-links { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .map-link path { fill: none; stroke-width: 2; }
+.map-link path { stroke-linecap: round; stroke-linejoin: round; }
 .map-link.io path { stroke: #8196a9; }
 .map-link.s7 path { stroke: #6ccbed; }
 .map-link.hmi path { stroke: #c9a0ff; stroke-dasharray: 7 5; }

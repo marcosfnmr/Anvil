@@ -198,5 +198,5 @@ function showUserError(dialog, message) {
 installAuthenticationGate().then((auth) => {
   if (auth?.auth_required && !auth.authenticated) return;
   if (auth?.authenticated) window.anvilUser = auth.user;
-  import('./app.js?v=ui-polish-hmi-map-20261009').catch(startupError);
+  import('./app.js?v=canvas-links-live-20261013').catch(startupError);
 }).catch(startupError);
