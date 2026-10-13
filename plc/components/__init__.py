@@ -13,9 +13,10 @@ if TYPE_CHECKING:
 ComponentType = TypeVar("ComponentType", bound="Component")
 
 COMPONENT_REGISTRY: dict[str, type[Component]] = {}
+COMPONENT_CONFIG_REGISTRY: dict[str, type] = {}
 
 
-def register_component(type_name: str) -> Callable[[type[ComponentType]], type[ComponentType]]:
+def register_component(type_name: str, config_model: type | None = None) -> Callable[[type[ComponentType]], type[ComponentType]]:
     """Register a component class under its PLC_CONFIG ``type`` value."""
     if not type_name:
         raise ValueError("Component type name must not be empty")
@@ -24,6 +25,8 @@ def register_component(type_name: str) -> Callable[[type[ComponentType]], type[C
         if type_name in COMPONENT_REGISTRY:
             raise ValueError(f"A component is already registered for type '{type_name}'")
         COMPONENT_REGISTRY[type_name] = component_class
+        if config_model is not None:
+            COMPONENT_CONFIG_REGISTRY[type_name] = config_model
         return component_class
 
     return decorator

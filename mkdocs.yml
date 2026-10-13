@@ -1,0 +1,95 @@
+site_name: Anvil · Documentación
+site_description: Manual de usuario, operación y desarrollo de Anvil OT Cyber Range
+site_url: http://localhost:8009/
+repo_url: https://github.com/marcosfnmr/Anvil
+repo_name: marcosfnmr/Anvil
+docs_dir: docs
+site_dir: site
+theme:
+  name: material
+  language: es
+  palette:
+    - scheme: slate
+      primary: blue grey
+      accent: cyan
+  features:
+    - navigation.instant
+    - navigation.sections
+    - navigation.path
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - tables
+nav:
+  - Inicio: index.md
+  - Primeros pasos:
+      - Instalación y primer arranque: getting-started.md
+      - Recorrido guiado: tutorial.md
+      - Conceptos de Anvil: concepts.md
+      - Glosario OT y de Anvil: glossary.md
+      - Interfaz y mapa: INTERFACE.md
+  - Diseñar un escenario:
+      - Ciclo de vida de escenarios: scenarios.md
+      - Mapa de proceso y conexiones: PROCESS_MAP.md
+      - Sensores y actuadores de campo: FIELD_OBJECTS.md
+      - Zonas y rutas de red: NETWORK_ZONES.md
+      - Perfiles y plantillas: DEVICE_PROFILES.md
+      - Biblioteca de componentes: COMPONENT_LIBRARY.md
+      - Demostración de planta de agua: DEMO_PLANTA_AGUA.md
+      - Demostración de estación de bombeo: DEMO_BOMBEO.md
+  - Dispositivos y protocolos:
+      - PLC S7 en Anvil: plc-s7.md
+      - Fichas de fidelidad: DEVICE_FIDELITY.md
+      - Canales y lógica PLC: PLC_LOGIC.md
+      - Comunicación S7 entre PLCs: S7_LINKS.md
+      - Modbus TCP y RTU: MODBUS.md
+      - HMI y operación: hmi.md
+      - SCADA: SCADA.md
+      - Modelo de proceso: process-model.md
+      - Motor de proceso y runtime de campo: PROCESS_ENGINE.md
+  - Operar y administrar:
+      - Arranque, actualización y copias: OPERATIONS.md
+      - Acceso a dispositivos OT: ACCESS.md
+      - Cuentas y permisos: PLATFORM_ACCESS.md
+      - Auditoría: AUDIT.md
+      - Ejercicios: EXERCISES.md
+      - Diseño de intercepción protocolaria: PROTOCOL_INTERCEPTION_DESIGN.md
+      - Vista previa local: DEMO_PREVIEW.md
+      - Solución de problemas: troubleshooting.md
+  - API e integración:
+      - API HTTP y WebSocket: api.md
+      - Paquetes de escenario: deployment.md
+      - Validación e integración: VALIDATION_LOCAL.md
+  - Seguridad y límites:
+      - Seguridad de contenedores: CONTAINER_SECURITY.md
+      - Imágenes base: CONTAINER_BASES.md
+      - Fidelidad del simulador: DEVICE_FIDELITY.md
+      - Arquitectura funcional y cobertura: SRS_ARCHITECTURE.md
+      - Límites y cobertura del SRS: SRS_TRACEABILITY.md
+      - Requisitos SRS v1: SRS_REQUIREMENTS_v1.md
+      - Informe de capacidad: benchmarks/RNF04-2026-10-07.md
+  - Desarrollo:
+      - Arquitectura: DESIGN.md
+      - Añadir un adaptador: EXTENDING_DEVICES.md
+      - Hoja de ruta: ROADMAP.md
+      - Criterios de documentación: documentation-maintenance.md
+plugins:
+  - search
+validation:
+  links:
+    not_found: ignore
+    anchors: warn
+    unrecognized_links: warn
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/marcosfnmr/Anvil

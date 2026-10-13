@@ -1,0 +1,44 @@
+[
+  {
+    "device_type": "field-runtime",
+    "sha256": "16f973de3418c7885a74bdee876d10173122ebb955c763c8613ddbc87c036df1",
+    "argc": 5,
+    "source": "field_operations.py",
+    "constant": "SCRIPT"
+  },
+  {
+    "device_type": "plc-s7",
+    "sha256": "8d06cf5bcba7a8d6e68feb57fe335ba4d73cd0c9bcef06993497b7f04199818c",
+    "argc": 11,
+    "source": "plc_operations.py",
+    "constant": "_S7_SCRIPT"
+  },
+  {
+    "device_type": "plc-s7",
+    "sha256": "2bbdd78ca5b52cbdb278c3e2939bf83fcefbab18c05e3d953bf9f4d5b43c5fe2",
+    "argc": 3,
+    "source": "plc_operations.py",
+    "constant": "_LINK_STATUS_SCRIPT"
+  },
+  {
+    "device_type": "modbus-tcp",
+    "sha256": "fed34f4a8cfab0b59d7a8f2d99edf8986e313ec66ea24df85a92e2227d8972e9",
+    "argc": 14,
+    "source": "modbus_operations.py",
+    "constant": "_MODBUS_SCRIPT"
+  },
+  {
+    "device_type": "modbus-tcp",
+    "sha256": "95ff1685f83bd66f36e7ee656f8abea1732cefa72b55ecbbb0609aaa884e3724",
+    "argc": 4,
+    "source": "modbus_operations.py",
+    "constant": "_RTU_READ_ALL_SCRIPT"
+  },
+  {
+    "device_type": "scada",
+    "sha256": "28d51d65300a32cb3f45913a11af37a4775ff59c9732cfde719b2a68b7a326ac",
+    "argc": 5,
+    "source": "scada_operations.py",
+    "constant": "script"
+  }
+]

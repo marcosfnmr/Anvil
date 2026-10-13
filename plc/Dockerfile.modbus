@@ -1,0 +1,10 @@
+ARG MODBUS_BASE_IMAGE=docker.io/library/python:3.11-slim@sha256:0dd364ba7e10242f07755449e3a3d0e35f9efd987952737b90def6709ab0c5ce
+FROM ${MODBUS_BASE_IMAGE}
+WORKDIR /app
+COPY requirements.modbus.lock .
+RUN pip install --no-cache-dir -r requirements.modbus.lock
+COPY modbus_server.py modbus_schema.py field_bridge.py timing.py protocol_audit.py ./
+RUN mkdir -p /var/lib/anvil/protocol-audit && chown -R 65534:65534 /var/lib/anvil
+EXPOSE 502/tcp
+HEALTHCHECK --interval=5s --timeout=4s --start-period=5s --retries=3 CMD ["python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',502),3); s.close()"]
+CMD ["python", "modbus_server.py"]

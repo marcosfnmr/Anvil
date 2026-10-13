@@ -1,0 +1,11 @@
+ARG SCADA_BASE_IMAGE=docker.io/library/python:3.11-slim@sha256:0dd364ba7e10242f07755449e3a3d0e35f9efd987952737b90def6709ab0c5ce
+FROM ${SCADA_BASE_IMAGE}
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY requirements.lock requirements.modbus.lock ./
+RUN pip install --no-cache-dir -r requirements.lock -r requirements.modbus.lock
+COPY scada_server.py scada_history.py hmi_operations.py ./
+RUN mkdir -p /var/lib/anvil/scada-history && chown 65534:65534 /var/lib/anvil/scada-history
+EXPOSE 8766/tcp
+HEALTHCHECK --interval=5s --timeout=4s --start-period=5s --retries=3 CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8766/health', timeout=3)"]
+CMD ["python", "scada_server.py"]

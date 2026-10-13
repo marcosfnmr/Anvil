@@ -1,0 +1,8 @@
+ARG EGRESS_BASE_IMAGE=docker.io/library/python:3.11-slim@sha256:0dd364ba7e10242f07755449e3a3d0e35f9efd987952737b90def6709ab0c5ce
+FROM ${EGRESS_BASE_IMAGE}
+
+WORKDIR /app
+COPY egress_proxy.py ./
+EXPOSE 3128/tcp
+HEALTHCHECK --interval=5s --timeout=2s --start-period=2s --retries=5 CMD ["python", "-c", "import socket,sys; s=socket.create_connection((sys.argv[1],3128),1); s.close()", "127.0.0.1"]
+CMD ["python", "-u", "egress_proxy.py"]

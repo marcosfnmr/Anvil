@@ -1,7 +1,8 @@
-import { registerComponentType } from "./registry.js";
+import { registerComponentType } from "./registry.js?v=field-live-3";
 
 registerComponentType("valve", {
   label: "Válvula",
+  deviceTypes: ["plc-s7"],
   icon: "V",
   create(index = 1) {
     return {

@@ -19,4 +19,13 @@ def get_docker_manager() -> DockerManager:
         ) from error
 
 
+def get_optional_docker_manager() -> DockerManager | None:
+    """Allow durable read endpoints to work when Docker is temporarily offline."""
+    try:
+        return DockerManager()
+    except DockerManagerError:
+        return None
+
+
 DockerDependency = Annotated[DockerManager, Depends(get_docker_manager)]
+OptionalDockerDependency = Annotated[DockerManager | None, Depends(get_optional_docker_manager)]

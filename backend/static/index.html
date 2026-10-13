@@ -5,129 +5,269 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#101418" />
     <title>Anvil — OT Scenario Builder</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/drawflow@0.0.60/dist/drawflow.min.css"
-    />
-    <link rel="stylesheet" href="/style.css" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=anvil-forge-mark-20261011" />
+    <link rel="stylesheet" href="/vendor/drawflow.min.css" />
+    <link rel="stylesheet" href="/style.css?v=anvil-brand-20261009" />
     <link rel="stylesheet" href="/events.css" />
-  </head>
+    <link rel="stylesheet" href="/runtime.css?v=field-sequence-1" />
+    <link rel="stylesheet" href="/accessibility.css" />
+    <link rel="stylesheet" href="/workspace.css?v=compact-editor-map-polish-20261009" />
+    <link rel="stylesheet" href="/process-map.css?v=runtime-diagnostics-1" />
+</head>
   <body>
+    <a class="skip-link" href="#device-selector">Saltar a la configuración de dispositivos</a>
     <div class="app-shell">
       <header class="topbar">
         <a class="brand" href="/" aria-label="Anvil, inicio">
-          <span class="brand-mark" aria-hidden="true">A</span>
-          <span>
-            <strong>ANVIL</strong>
-            <small>OT SCENARIO BUILDER</small>
-          </span>
+          <img class="brand-mark" src="/favicon.svg?v=anvil-forge-mark-20261009b" alt="" aria-hidden="true" width="40" height="40" />
+          <span><strong>ANVIL</strong><small>OT SCENARIO BUILDER</small></span>
         </a>
-
         <div class="scenario-meta">
-          <label>
-            <span>Escenario</span>
-            <input id="scenario-name" type="text" value="Nueva línea OT" maxlength="80" />
-          </label>
-          <label>
-            <span>Red</span>
-            <input id="scenario-subnet" type="text" value="172.30.100.0/24" />
-          </label>
+          <label><span>Escenario</span><input id="scenario-name" aria-label="Nombre del escenario" type="text" value="Nueva línea OT" maxlength="80" /></label>
+          <label><span>Red</span><input id="scenario-subnet" type="text" value="172.30.100.0/24" /></label>
         </div>
-
         <div class="topbar-actions">
-          <div id="scenario-status" class="status-pill status-stopped">
-            <span class="status-dot"></span>
-            <span>Detenido</span>
-          </div>
+          <button id="help-button" class="button button-secondary" type="button">Cómo usar Anvil</button>
+          <div id="scenario-status" class="status-pill status-stopped"><span class="status-dot"></span><span>Detenido</span></div>
           <button id="save-button" class="button button-secondary" type="button">Guardar</button>
-          <button id="deploy-button" class="button button-primary" type="button">
-            Desplegar
-          </button>
-          <button id="stop-button" class="button button-danger" type="button" disabled>
-            Detener
-          </button>
+          <button id="deploy-button" class="button button-primary" type="button">Desplegar</button>
+          <button id="restart-button" class="button button-secondary" type="button" disabled>Reiniciar</button>
+          <button id="pause-button" class="button button-secondary" type="button" disabled>Pausar</button>
+          <button id="resume-button" class="button button-secondary" type="button" disabled>Reanudar</button>
+          <button id="stop-button" class="button button-danger" type="button" disabled>Detener</button>
         </div>
       </header>
 
-      <main class="workspace">
+      <main class="workspace" aria-label="Editor de escenarios OT">
         <aside class="left-panel panel">
           <section class="panel-section scenarios-section">
-            <div class="section-heading">
-              <div>
-                <span class="eyebrow">PROYECTO</span>
-                <h2>Escenarios</h2>
-              </div>
-              <button id="new-scenario-button" class="icon-button" type="button" title="Nuevo escenario">
-                +
-              </button>
+            <div class="section-heading"><div><span class="eyebrow">PROYECTO</span><h2>Escenarios</h2></div>
+              <button id="new-scenario-button" class="icon-button" type="button" title="Nuevo escenario">+</button></div>
+            <div class="scenario-tools">
+              <button id="templates-button" class="tiny-button" type="button">Plantillas</button>
+              <button id="component-library-button" class="tiny-button" type="button">Componentes compartidos</button>
+              <button id="history-button" class="tiny-button" type="button" disabled>Versiones</button>
+              <button id="import-scenario-button" class="tiny-button" type="button">Importar JSON</button>
+              <input id="import-scenario-file" type="file" accept="application/json,.json" hidden />
+              <button id="export-scenario-button" class="tiny-button" type="button" disabled>Exportar</button>
+              <button id="export-deployment-button" class="tiny-button" type="button" disabled>Paquete Docker</button>
+              <button id="clone-scenario-button" class="tiny-button" type="button" disabled>Clonar</button>
+              <button id="migrate-field-copy-button" class="tiny-button" type="button" disabled hidden title="Crea una copia con componentes PLC convertidos a objetos de campo">Migrar campo a copia</button>
+              <button id="share-scenario-button" class="tiny-button" type="button" disabled hidden>Compartir</button>
             </div>
             <div id="scenario-list" class="scenario-list" aria-live="polite"></div>
           </section>
-
           <section class="panel-section palette-section">
-            <div class="section-heading">
-              <div>
-                <span class="eyebrow">CATÁLOGO</span>
-                <h2>Dispositivos</h2>
-              </div>
-            </div>
-            <p class="section-help">Arrastra un dispositivo al lienzo.</p>
+            <div class="section-heading"><div><span class="eyebrow">CATÁLOGO</span><h2>Dispositivos</h2></div></div>
+            <p class="section-help">Pulsa un dispositivo para añadirlo. También puedes arrastrarlo al lienzo.</p>
             <div id="node-palette" class="node-palette"></div>
           </section>
-
           <section class="panel-section events-section">
-            <div class="section-heading">
-              <div>
-                <span class="eyebrow">TELEMETRÍA</span>
-                <h2>Actividad</h2>
-              </div>
-              <span id="event-connection" class="event-connection">Sin escenario</span>
-            </div>
-            <div id="event-log" class="event-log" aria-live="polite">
-              <div class="event-log-empty">Selecciona un escenario para recibir eventos.</div>
-            </div>
+            <div class="section-heading"><div><span class="eyebrow">TELEMETRÍA</span><h2>Actividad</h2></div>
+              <span id="event-connection" class="event-connection">Sin escenario</span></div>
+            <div id="event-log" class="event-log" aria-live="polite"><div class="event-log-empty">Selecciona un escenario para recibir eventos.</div></div>
           </section>
-
-          <section class="panel-footer">
-            <a href="/docs" target="_blank" rel="noreferrer">API /docs ↗</a>
-            <span id="api-indicator" class="api-indicator">Comprobando API…</span>
-          </section>
+          <section class="panel-footer"><a href="/docs" target="_blank" rel="noreferrer">API /docs ↗</a>
+            <span id="api-indicator" class="api-indicator">Comprobando API…</span></section>
         </aside>
 
         <section class="canvas-panel" aria-label="Lienzo del escenario">
-          <div class="canvas-toolbar">
-            <div>
-              <span class="eyebrow">TOPOLOGÍA</span>
-              <strong id="canvas-summary">0 dispositivos</strong>
-            </div>
-            <div class="canvas-hint">Arrastra · selecciona · configura</div>
-          </div>
+          <div class="canvas-toolbar"><div><span class="eyebrow">TOPOLOGÍA</span><strong id="canvas-summary">0 dispositivos</strong></div>
+            <div id="canvas-network-hint" class="canvas-hint">Una red compartida por escenario</div>
+            <details class="zone-editor"><summary>Zonas Purdue</summary><div class="zone-editor-body"><p class="section-help">Cada zona usa una red Docker interna. El tráfico entre zonas está bloqueado; aún no hay rutas configurables.</p><div id="zone-list"></div><button id="add-zone-button" class="tiny-button" type="button">Añadir zona</button></div></details></div>
           <div id="drawflow" class="drawflow-canvas"></div>
-          <div id="empty-canvas" class="empty-canvas">
-            <div class="empty-icon" aria-hidden="true">＋</div>
-            <strong>Construye tu escenario OT</strong>
-            <span>Arrastra un PLC desde el catálogo</span>
-          </div>
+          <div id="empty-canvas" class="empty-canvas"><div class="empty-icon" aria-hidden="true">＋</div>
+            <h1>Tu laboratorio OT</h1><span>Añade un dispositivo, configura sus señales y despliega.</span>
+            <button data-open-templates class="button button-primary" type="button">Explorar plantillas</button>
+            <span>Elige una plantilla y crea un escenario editable.</span></div>
         </section>
 
         <aside class="right-panel panel">
-          <section class="panel-section inspector-heading">
-            <span class="eyebrow">INSPECTOR</span>
-            <h2>Configuración</h2>
+          <section class="panel-section inspector-heading"><span class="eyebrow">INSPECTOR</span><h2>Configuración</h2>
+            <label class="device-picker">Dispositivo<select id="device-selector"><option value="">Selecciona un dispositivo…</option></select></label>
+            <p id="editing-notice" class="section-help" hidden>Detén el escenario para modificar su configuración. Puedes consultar sus valores mientras se ejecuta.</p>
+            <p id="editor-feedback" class="editor-feedback" role="status" hidden></p>
           </section>
           <div id="inspector" class="inspector"></div>
-          <div class="right-panel-footer">
-            <button id="delete-scenario-button" class="text-danger" type="button" disabled>
-              Eliminar escenario
-            </button>
-          </div>
+          <section id="runtime-panel" class="runtime-panel" aria-label="Runtime del escenario">
+            <header class="runtime-header"><div class="runtime-tabs" role="tablist">
+              <button class="runtime-tab active" data-runtime-tab="map" type="button">Señales</button>
+              <button class="runtime-tab" data-runtime-tab="history" type="button">Historial</button>
+              <button class="runtime-tab" data-runtime-tab="protocol" type="button">Protocolo</button>
+              <button class="runtime-tab" data-runtime-tab="logs" type="button">Logs</button>
+              <button class="runtime-tab" data-runtime-tab="capture" type="button">PCAP</button>
+              <button class="runtime-tab" data-runtime-tab="exercise" type="button">Ejercicios</button>
+              <button class="runtime-tab" data-runtime-tab="audit" type="button">Auditoría</button>
+            </div><span id="log-connection" class="runtime-connection">Sin escenario</span></header>
+            <p id="value-status" class="value-status" role="status">Guarda un escenario para ver sus señales.</p>
+            <div id="io-map" class="runtime-view" data-runtime-view="map"></div>
+            <div id="signal-history" class="runtime-view" data-runtime-view="history" hidden></div>
+            <div id="runtime-protocol" class="runtime-view" data-runtime-view="protocol" hidden></div>
+            <div id="runtime-logs" class="runtime-view" data-runtime-view="logs" hidden></div>
+            <div id="runtime-capture" class="runtime-view" data-runtime-view="capture" hidden>
+              <p class="capture-explainer">Captura el enlace de un dispositivo o el tráfico completo de una zona en su bridge Docker interno. La captura de segmento usa un sidecar limitado al bridge Linux; máximo 40.000 paquetes y un PCAP de 8 MiB.</p>
+              <label class="capture-device-label">Alcance<select data-capture-scope aria-label="Alcance de la captura"><option value="device">Un dispositivo</option><option value="link">Enlace entre dos dispositivos</option><option value="zone">Una zona</option></select></label>
+              <label class="capture-device-label" data-capture-device-wrap>Dispositivo<select data-capture-node aria-label="Dispositivo cuyo enlace se capturará"></select></label>
+              <label class="capture-device-label" data-capture-link-wrap hidden>Origen<select data-capture-link-source aria-label="Dispositivo origen del enlace"></select></label>
+              <label class="capture-device-label" data-capture-link-wrap hidden>Destino<select data-capture-link-target aria-label="Dispositivo destino del enlace"></select></label>
+              <label class="capture-device-label" data-capture-zone-wrap hidden>Zona<select data-capture-zone aria-label="Zona cuyos endpoints se capturarán"></select></label>
+              <div class="capture-actions"><button class="tiny-button" type="button" data-capture-start disabled>Iniciar captura</button><button class="tiny-button" type="button" data-capture-export disabled>Detener y descargar PCAP</button></div>
+              <label class="capture-include-label"><input type="checkbox" data-evidence-include-capture disabled> Incluir la captura activa en el ZIP</label>
+              <p class="capture-explainer capture-consumption-note">Al incluirla, se detendrá y consumirá: el contenedor de captura se eliminará después de preparar el ZIP.</p>
+              <div class="capture-actions"><button class="tiny-button" type="button" data-evidence-export disabled hidden>Descargar ZIP de evidencias</button></div>
+              <p class="capture-status" data-capture-status role="status">Despliega el escenario y selecciona un dispositivo.</p>
+            </div>
+            <div id="runtime-exercise" class="runtime-view exercise-view" data-runtime-view="exercise" hidden>
+              <p class="capture-explainer">Prepara una cronología de acciones y define cómo se evaluará el resultado. Los controles usan las salidas y objetos que ya existen en este escenario.</p>
+              <div data-exercise-builder class="exercise-builder">
+                <div class="exercise-fields">
+                  <label>Nombre del ejercicio<input type="text" maxlength="120" data-exercise-name value="Ejercicio OT" required></label>
+                  <label>Descripción<input type="text" maxlength="1000" data-exercise-description placeholder="Contexto para el instructor y los participantes"></label>
+                  <label>Regla de éxito<select data-exercise-success-rule><option value="all">Cumplir todos los objetivos</option><option value="any">Cumplir cualquier objetivo</option><option value="score">Alcanzar una puntuación</option></select></label>
+                  <label>Puntuación mínima<input type="number" min="0" max="100" step="1" value="100" data-exercise-passing-score></label>
+                </div>
+                <section class="exercise-builder-section" aria-labelledby="exercise-events-title">
+                  <header><h3 id="exercise-events-title">Cronología</h3><button class="tiny-button" type="button" data-exercise-add-event>Añadir evento</button></header>
+                  <p class="section-help">Puedes programar escrituras de salida, acciones de ciclo de vida e incidentes de campo, hasta 24 horas.</p>
+                  <div data-exercise-events></div>
+                </section>
+                <section class="exercise-builder-section" aria-labelledby="exercise-objectives-title">
+                  <header><h3 id="exercise-objectives-title">Objetivos de evaluación</h3><button class="tiny-button" type="button" data-exercise-add-objective>Añadir objetivo</button></header>
+                  <p class="section-help">Evalúa señales S7/Modbus, variables físicas o eventos de auditoría. Las condiciones físicas y de señal pueden exigir una duración continua.</p>
+                  <div data-exercise-objectives></div>
+                </section>
+              </div>
+              <details class="exercise-advanced"><summary>Editar JSON avanzado</summary>
+                <label class="exercise-definition-label" for="exercise-definition">Definición completa</label>
+                <textarea id="exercise-definition" data-exercise-definition spellcheck="false" aria-describedby="exercise-format-help" placeholder='{"name":"Ejercicio","events":[],"objectives":[]}'></textarea>
+                <p id="exercise-format-help" class="section-help">Usa este modo para revisar o editar directamente todos los campos del esquema.</p>
+              </details>
+              <div class="capture-actions"><button class="tiny-button" type="button" data-exercise-create disabled>Guardar definición</button><button class="tiny-button" type="button" data-exercise-start disabled>Iniciar</button><button class="tiny-button" type="button" data-exercise-cancel disabled>Cancelar</button></div>
+              <p class="capture-status" data-exercise-status role="status">Guarda un escenario para preparar un ejercicio.</p>
+              <div data-exercise-results class="exercise-results" aria-live="polite"></div>
+            </div>
+            <div id="runtime-audit" class="runtime-view" data-runtime-view="audit" hidden></div>
+          </section>
+          <div class="right-panel-footer"><button id="delete-scenario-button" class="text-danger" type="button" disabled>Eliminar escenario</button></div>
         </aside>
       </main>
     </div>
-
+    <dialog id="history-dialog" aria-labelledby="history-title">
+      <form method="dialog"><button class="button button-secondary" aria-label="Cerrar versiones">Cerrar</button></form>
+      <h2 id="history-title">Historial de versiones</h2>
+      <p>Cada cambio guardado crea una revisión. Restaurar conserva el historial y añade una nueva versión.</p>
+      <div id="history-list" class="template-list" aria-live="polite"><p>Cargando historial…</p></div>
+    </dialog>
+    <dialog id="templates-dialog" aria-labelledby="templates-title">
+      <form method="dialog"><button class="button button-secondary" aria-label="Cerrar plantillas">Cerrar</button></form>
+      <h2 id="templates-title">Plantillas de escenarios OT</h2>
+      <p>Selecciona una base; se creará como escenario detenido y podrás editarla antes de desplegar.</p>
+      <form id="publish-template-form" class="user-create-form" hidden>
+        <h3>Compartir el escenario actual como plantilla</h3>
+        <label>Nombre<input name="title" required minlength="2" maxlength="120"></label>
+        <label>Categoría<input name="category" required minlength="2" maxlength="80"></label>
+        <label>Descripción<textarea name="summary" required minlength="10" maxlength="500" rows="3"></textarea></label>
+        <label>Complejidad<input name="complexity" value="Intermedia" required minlength="2" maxlength="40"></label>
+        <label>Etiquetas, separadas por comas<input name="tags" maxlength="240"></label>
+        <button class="button button-primary" type="submit">Publicar en biblioteca</button>
+        <p id="publish-template-error" role="alert" hidden></p>
+      </form>
+      <div id="templates-list" class="template-list" aria-live="polite"><p>Cargando plantillas…</p></div>
+    </dialog>
+    <dialog id="edit-shared-template-dialog" aria-labelledby="edit-shared-template-title">
+      <form method="dialog"><button class="button button-secondary" aria-label="Cerrar edición de plantilla">Cerrar</button></form>
+      <h2 id="edit-shared-template-title">Editar plantilla compartida</h2>
+      <p>Los cambios crean una versión nueva. Puedes mantener la topología o sustituirla por un escenario guardado que tengas visible.</p>
+      <form id="edit-shared-template-form" class="user-create-form">
+        <input name="template_id" type="hidden"><input name="expected_revision" type="hidden">
+        <label>Nombre<input name="title" required minlength="2" maxlength="120"></label>
+        <label>Categoría<input name="category" required minlength="2" maxlength="80"></label>
+        <label>Descripción<textarea name="summary" required minlength="10" maxlength="500" rows="3"></textarea></label>
+        <label>Complejidad<input name="complexity" required minlength="2" maxlength="40"></label>
+        <label>Etiquetas, separadas por comas<input name="tags" maxlength="480"></label>
+        <label>Contenido del escenario<select name="scenario_id"><option value="">Conservar contenido actual</option></select></label>
+        <button class="button button-primary" type="submit">Guardar nueva versión</button>
+        <p id="edit-shared-template-error" role="alert" hidden></p>
+      </form>
+    </dialog>
+    <dialog id="shared-template-history-dialog" aria-labelledby="shared-template-history-title">
+      <form method="dialog"><button class="button button-secondary" aria-label="Cerrar historial de plantilla">Cerrar</button></form>
+      <h2 id="shared-template-history-title">Versiones de plantilla</h2>
+      <p>Las versiones anteriores no se sobrescriben. Restaurar crea otra versión con el contenido elegido.</p>
+      <div id="shared-template-history-list" class="template-list" aria-live="polite"></div>
+    </dialog>
+    <dialog id="component-library-dialog" aria-labelledby="component-library-title">
+      <form method="dialog"><button class="button button-secondary" aria-label="Cerrar componentes compartidos">Cerrar</button></form>
+      <h2 id="component-library-title">Componentes compartidos</h2>
+      <p>Presets reutilizables validados por el tipo de dispositivo. Solo guardan configuración; no cargan código ejecutable.</p>
+      <form id="publish-component-form" class="user-create-form" hidden>
+        <h3>Publicar componente seleccionado</h3>
+        <label>Nombre del preset<input name="title" required minlength="2" maxlength="120"></label>
+        <label>Descripción<textarea name="description" required minlength="10" maxlength="500" rows="3"></textarea></label>
+        <input name="device_type" type="hidden">
+        <input name="component_type" type="hidden">
+        <input name="config" type="hidden">
+        <button class="button button-primary" type="submit">Compartir componente</button>
+        <p id="publish-component-error" role="alert" hidden></p>
+      </form>
+      <div id="component-library-list" class="template-list" aria-live="polite"><p>Cargando componentes…</p></div>
+    </dialog>
+    <dialog id="edit-component-preset-dialog" aria-labelledby="edit-component-preset-title">
+      <form method="dialog"><button class="button button-secondary" aria-label="Cerrar edición de preset">Cerrar</button></form>
+      <h2 id="edit-component-preset-title">Editar preset compartido</h2>
+      <p>Los cambios crean una versión nueva. El tipo de dispositivo y de componente se conserva.</p>
+      <form id="edit-component-preset-form" class="user-create-form">
+        <input name="preset_id" type="hidden"><input name="expected_revision" type="hidden">
+        <label>Nombre<input name="title" required minlength="2" maxlength="120"></label>
+        <label>Descripción<textarea name="description" required minlength="10" maxlength="500" rows="3"></textarea></label>
+        <label>Configuración JSON<textarea name="config" required rows="10" spellcheck="false" autocapitalize="off"></textarea></label>
+        <button class="button button-primary" type="submit">Guardar nueva versión</button>
+        <p id="edit-component-preset-error" role="alert" hidden></p>
+      </form>
+    </dialog>
+    <dialog id="component-preset-history-dialog" aria-labelledby="component-preset-history-title">
+      <form method="dialog"><button class="button button-secondary" aria-label="Cerrar historial del preset">Cerrar</button></form>
+      <h2 id="component-preset-history-title">Versiones del preset</h2>
+      <p>Las versiones anteriores no se sobrescriben. Restaurar crea otra versión.</p>
+      <div id="component-preset-history-list" class="template-list" aria-live="polite"></div>
+    </dialog>
+    <dialog id="scenario-access-dialog" aria-labelledby="scenario-access-title">
+      <form method="dialog"><button class="button button-secondary" aria-label="Cerrar acceso al escenario">Cerrar</button></form>
+      <h2 id="scenario-access-title">Compartir escenario</h2>
+      <p>Concede acceso a una cuenta activa. Los cambios de rol se aplican al instante.</p>
+      <form id="scenario-access-form" class="user-create-form">
+        <label>Correo electrónico<input name="email" type="email" autocomplete="off" required maxlength="254"></label>
+        <label>Permiso<select name="role"><option value="participant">Participante · consulta y operación permitida</option><option value="designer">Diseñador · puede editar</option><option value="instructor">Instructor · puede desplegar y gestionar acceso</option></select></label>
+        <button class="button button-primary" type="submit">Compartir</button>
+        <p id="scenario-access-error" role="alert" hidden></p>
+      </form>
+      <h3>Personas con acceso</h3>
+      <div id="scenario-access-list" aria-live="polite"></div>
+    </dialog>
+    <dialog id="participant-terminal-dialog" class="participant-terminal-dialog" aria-labelledby="participant-terminal-title" aria-describedby="participant-terminal-help">
+      <header class="terminal-dialog-header"><div><h2 id="participant-terminal-title">Terminal de estación</h2><p id="participant-terminal-help">Shell interactiva dentro del contenedor seleccionado. La sesión usa UID sin privilegios y no guarda los comandos.</p></div><button type="button" class="button button-secondary" data-terminal-close>Cerrar</button></header>
+      <p data-terminal-status class="capture-status" role="status">Sin conexión.</p>
+      <pre data-terminal-output class="participant-terminal-output" role="log" aria-live="polite" tabindex="0"></pre>
+      <form data-terminal-form class="participant-terminal-form"><label>Comando<input data-terminal-input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="2048" aria-label="Comando para la estación de participante"></label><button class="button button-primary" type="submit" disabled>Enviar</button><button class="button button-secondary" type="button" data-terminal-interrupt disabled>Interrumpir</button></form>
+    </dialog>
+    <dialog id="help-dialog" aria-labelledby="help-title">
+      <form method="dialog"><button class="button button-secondary" aria-label="Cerrar ayuda">Cerrar</button></form>
+      <h2 id="help-title">De un escenario a señales reales</h2>
+      <ol>
+        <li><strong>Diseña primero la planta.</strong> En «Escenarios» pulsa «Nuevo escenario». Desde «Catálogo» añade sensores, válvulas, motores o bombas independientes y colócalos en el mapa. También puedes empezar desde «Plantillas».</li>
+        <li><strong>Añade y conecta los controladores.</strong> Añade un PLC o equipo Modbus desde el catálogo. En el elemento de campo pulsa «Configurar y conectar», elige el controlador para cada puerto y pulsa «Conectar y crear canal». La medida y el estado van hacia el controlador; la orden va hacia el actuador.</li>
+        <li><strong>Conecta la HMI.</strong> Selecciona la HMI y marca los dispositivos que quieras leer. No necesitas copiar identificadores.</li>
+        <li><strong>Comunica dos PLCs.</strong> En el PLC receptor selecciona «Entrada remota S7» y pulsa «Añadir señal». Elige BOOL o REAL, el PLC emisor y su señal. La consulta es unidireccional y usa S7 en la red del escenario.</li>
+        <li><strong>Guarda y despliega.</strong> Anvil crea contenedores y calcula las direcciones. En «Telemetría → Señales» puedes leer valores y escribir los puntos permitidos. Usa el filtro para consultar un dispositivo concreto.</li>
+        <li><strong>Detén para editar.</strong> Los contenedores se retiran, pero la configuración queda guardada. Al desplegar de nuevo, las señales parten de sus valores iniciales.</li>
+      </ol>
+      <h3>Cómo se comunican los dispositivos</h3>
+      <p>Todos comparten una red Docker del escenario. Los elementos de campo se simulan en su propio contenedor; el transporte HTTP interno representa su cableado con los canales del controlador. Los enlaces entre PLCs usan S7. Puedes consultar si las señales están vigentes, obsoletas o pendientes. Ante un fallo se conserva el último valor y se recupera la conexión automáticamente. La bomba produce caudal según su estado simulado. En «Catálogo» puedes añadir tuberías, un distribuidor que divide el caudal por porcentaje y un colector que suma dos ramas; el modelo no resuelve todavía una red hidráulica general.</p>
+      <p>La HMI lee a través de Anvil. La política de consola controla la API, no el tráfico de red. Gateway es representativo y la estación de diagnóstico está aislada. Los permisos S7 de solo lectura se aplican en la consola; un cliente S7 externo puede escribir el DB.</p>
+      <p>La vista «Protocolo» muestra eventos S7 y el historial vive en este navegador. No es una captura de paquetes.</p>
+    </dialog>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-    <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.60/dist/drawflow.min.js"></script>
-    <script type="module" src="/app.js"></script>
+    <script src="/vendor/drawflow.min.js"></script>
+    <script type="module" src="/bootstrap.js?v=rf38-fc23-20261009"></script>
   </body>
 </html>

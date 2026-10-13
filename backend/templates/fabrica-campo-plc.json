@@ -1,0 +1,71 @@
+{
+  "name": "Fábrica · Campo independiente, S7 y Modbus",
+  "network": {"subnet": "172.30.242.0/24"},
+  "devices": [
+    {
+      "node_id": "plc-field",
+      "device_type": "plc-s7",
+      "name": "PLC de proceso",
+      "ip": "172.30.242.10",
+      "config": {
+        "scan_cycle_ms": 100,
+        "components": [
+          {"type": "io_channel", "channel_id": "level-ai", "name": "Nivel del depósito", "direction": "input", "data_type": "REAL", "unit": "%"},
+          {"type": "io_channel", "channel_id": "pump-do", "name": "Orden de bomba", "direction": "output", "data_type": "BOOL"},
+          {"type": "io_channel", "channel_id": "valve-do", "name": "Orden de válvula", "direction": "output", "data_type": "BOOL"}
+        ],
+        "control_rules": [
+          {"name": "Mantener nivel con bomba", "input_component": "Nivel del depósito", "output_component": "Orden de bomba", "mode": "below", "setpoint": 45, "hysteresis": 5},
+          {"name": "Abrir entrada al rellenar", "input_component": "Nivel del depósito", "output_component": "Orden de válvula", "mode": "below", "setpoint": 45, "hysteresis": 5}
+        ]
+      }
+    },
+    {
+      "node_id": "modbus-field",
+      "device_type": "modbus-tcp",
+      "name": "E/S Modbus auxiliar",
+      "ip": "172.30.242.11",
+      "config": {
+        "unit_id": 1,
+        "port": 502,
+        "points": [
+          {"type": "coil", "name": "Permiso remoto", "initial_value": false},
+          {"type": "holding_register", "name": "Lote", "initial_value": 1},
+          {"type": "input_register", "name": "Caudal indicado", "initial_value": 0, "unit": "L/min"}
+        ]
+      }
+    },
+    {
+      "node_id": "hmi-field",
+      "device_type": "hmi",
+      "name": "HMI de operador",
+      "ip": "172.30.242.12",
+      "config": {"role": "hmi", "summary": "Monitorización del campo S7 y Modbus", "target_node_ids": "plc-field,modbus-field"}
+    }
+  ],
+  "field_objects": [
+    {"object_id": "pump-feed", "type": "pump", "name": "Bomba de alimentación", "position": {"x": 50, "y": 500}, "response_seconds": 0, "flow_min": 90, "flow_max": 110, "unit": "L/min"},
+    {"object_id": "tank-main", "type": "tank", "name": "Depósito principal", "position": {"x": 690, "y": 500}, "capacity_liters": 100, "initial_level_liters": 30, "outlet_flow_lpm": 50},
+    {"object_id": "valve-inlet", "type": "valve", "name": "Válvula de llenado", "position": {"x": 360, "y": 500}, "response_seconds": 0, "flow_rate_lpm": 100},
+    {"object_id": "valve-drain", "type": "valve", "name": "Válvula de vaciado", "position": {"x": 1000, "y": 500}, "response_seconds": 0, "flow_rate_lpm": 50},
+    {"object_id": "sensor-level", "type": "analog_sensor", "name": "Transmisor de nivel", "position": {"x": 430, "y": 250}, "unit": "%", "min_value": 0, "max_value": 100, "simulation": {"mode": "process"}}
+  ],
+  "signal_connections": [
+    {"connection_id": "cmd-pump", "source": {"kind": "device", "node_id": "plc-field", "address": "DB1.DBX4.0", "channel_id": "pump-do"}, "target": {"kind": "field", "object_id": "pump-feed", "port": "command"}},
+    {"connection_id": "cmd-inlet", "source": {"kind": "device", "node_id": "plc-field", "address": "DB1.DBX5.0", "channel_id": "valve-do"}, "target": {"kind": "field", "object_id": "valve-inlet", "port": "command"}},
+    {"connection_id": "ai-level", "source": {"kind": "field", "object_id": "sensor-level", "port": "value"}, "target": {"kind": "device", "node_id": "plc-field", "address": "DB1.DBD0", "channel_id": "level-ai"}}
+  ],
+  "process_connections": [
+    {"connection_id": "pump-to-inlet", "source": {"object_id": "pump-feed", "port": "flow"}, "target": {"object_id": "valve-inlet", "port": "process_in"}},
+    {"connection_id": "inlet-to-tank", "source": {"object_id": "valve-inlet", "port": "process_out"}, "target": {"object_id": "tank-main", "port": "inlet"}},
+    {"connection_id": "tank-to-drain", "source": {"object_id": "tank-main", "port": "outlet"}, "target": {"object_id": "valve-drain", "port": "process_in"}},
+    {"connection_id": "tank-to-sensor", "source": {"object_id": "tank-main", "port": "level"}, "target": {"object_id": "sensor-level", "port": "measurement"}}
+  ],
+  "canvas": {
+    "data": {
+      "1": {"data": {"node_id": "plc-field"}, "pos_x": 50, "pos_y": 70},
+      "2": {"data": {"node_id": "modbus-field"}, "pos_x": 430, "pos_y": 70},
+      "3": {"data": {"node_id": "hmi-field"}, "pos_x": 810, "pos_y": 70}
+    }
+  }
+}

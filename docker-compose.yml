@@ -1,16 +1,81 @@
 services:
+  docker-api:
+    build:
+      context: ./docker_proxy
+    image: anvil/docker-api-gate:dev
+    environment:
+      ANVIL_ALLOWED_IMAGES: ${ANVIL_PLC_IMAGE:-anvil/plc-s7:dev},${ANVIL_MODBUS_IMAGE:-anvil/modbus-tcp:dev},${ANVIL_FIELD_IMAGE:-anvil/field:dev},${ANVIL_SCADA_IMAGE:-anvil/scada:dev},${ANVIL_HMI_IMAGE:-${ANVIL_SCADA_IMAGE:-anvil/scada:dev}},${ANVIL_PARTICIPANT_IMAGE:-${ANVIL_HMI_IMAGE:-${ANVIL_SCADA_IMAGE:-anvil/scada:dev}}},${ANVIL_ENGINEERING_IMAGE:-${ANVIL_PARTICIPANT_IMAGE:-${ANVIL_HMI_IMAGE:-${ANVIL_SCADA_IMAGE:-anvil/scada:dev}}}},${ANVIL_VIRTUAL_IMAGE:-${ANVIL_PLC_IMAGE:-anvil/plc-s7:dev}},${ANVIL_CAPTURE_IMAGE:-anvil/capture:dev},${ANVIL_EGRESS_IMAGE:-anvil/egress-proxy:dev},${ANVIL_INGRESS_IMAGE:-anvil/protocol-ingress:dev}
+      ANVIL_CAPTURE_IMAGE: ${ANVIL_CAPTURE_IMAGE:-anvil/capture:dev}
+      ANVIL_EGRESS_IMAGE: ${ANVIL_EGRESS_IMAGE:-anvil/egress-proxy:dev}
+      ANVIL_INGRESS_IMAGE: ${ANVIL_INGRESS_IMAGE:-anvil/protocol-ingress:dev}
+    volumes:
+      - ${ANVIL_DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
+    user: ${ANVIL_DOCKER_API_USER:-65534:1001}
+    networks:
+      - docker-control
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 32
+    mem_limit: 128m
+    cpus: 0.5
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=8m
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:12375/health', timeout=1)"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+      start_period: 2s
+
   backend:
     build:
       context: ./backend
     image: anvil/backend:dev
     environment:
       ANVIL_DATABASE_URL: sqlite:////data/anvil.db
-      ANVIL_PLC_IMAGE: anvil/plc-s7:dev
+      ANVIL_DATA_DIR: /data
+      ANVIL_BACKEND_UID: ${ANVIL_BACKEND_UID:-65534}
+      ANVIL_BACKEND_GID: ${ANVIL_BACKEND_GID:-65534}
+      ANVIL_COOKIE_SECURE: ${ANVIL_COOKIE_SECURE:-false}
+      ANVIL_PLC_IMAGE: ${ANVIL_PLC_IMAGE:-anvil/plc-s7:dev}
+      ANVIL_MODBUS_IMAGE: ${ANVIL_MODBUS_IMAGE:-anvil/modbus-tcp:dev}
+      ANVIL_FIELD_IMAGE: ${ANVIL_FIELD_IMAGE:-anvil/field:dev}
+      ANVIL_SCADA_IMAGE: ${ANVIL_SCADA_IMAGE:-anvil/scada:dev}
+      ANVIL_HMI_IMAGE: ${ANVIL_HMI_IMAGE:-${ANVIL_SCADA_IMAGE:-anvil/scada:dev}}
+      ANVIL_PARTICIPANT_IMAGE: ${ANVIL_PARTICIPANT_IMAGE:-${ANVIL_HMI_IMAGE:-${ANVIL_SCADA_IMAGE:-anvil/scada:dev}}}
+      ANVIL_ENGINEERING_IMAGE: ${ANVIL_ENGINEERING_IMAGE:-${ANVIL_PARTICIPANT_IMAGE:-${ANVIL_HMI_IMAGE:-${ANVIL_SCADA_IMAGE:-anvil/scada:dev}}}}
+      ANVIL_VIRTUAL_IMAGE: ${ANVIL_VIRTUAL_IMAGE:-${ANVIL_PLC_IMAGE:-anvil/plc-s7:dev}}
+      ANVIL_CAPTURE_IMAGE: ${ANVIL_CAPTURE_IMAGE:-anvil/capture:dev}
+      ANVIL_EGRESS_IMAGE: ${ANVIL_EGRESS_IMAGE:-anvil/egress-proxy:dev}
+      ANVIL_INGRESS_IMAGE: ${ANVIL_INGRESS_IMAGE:-anvil/protocol-ingress:dev}
+      ANVIL_SCENARIO_MAX_NODES: ${ANVIL_SCENARIO_MAX_NODES:-64}
+      ANVIL_SCENARIO_MAX_MEMORY_BYTES: ${ANVIL_SCENARIO_MAX_MEMORY_BYTES:-4294967296}
+      ANVIL_SCENARIO_MAX_NANO_CPUS: ${ANVIL_SCENARIO_MAX_NANO_CPUS:-15000000000}
+      ANVIL_AUDIT_RETENTION_DAYS: ${ANVIL_AUDIT_RETENTION_DAYS:-0}
       ANVIL_CLEANUP_ORPHANS: "true"
+      DOCKER_HOST: tcp://docker-api:12375
+    depends_on:
+      docker-api:
+        condition: service_healthy
     ports:
       - "8000:8000"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/data
     restart: unless-stopped
     stop_grace_period: 15s
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER, SETGID, SETUID]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=512m
+    networks:
+      - default
+      - docker-control
+
+networks:
+  docker-control:
+    internal: true

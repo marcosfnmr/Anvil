@@ -11,7 +11,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v4
@@ -24,37 +24,242 @@ jobs:
             backend/requirements-dev.lock
             backend/requirements.lock
             plc/requirements.lock
+            plc/requirements.modbus.lock
 
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r backend/requirements-dev.lock -r plc/requirements.lock
+          python -m pip install -r backend/requirements-dev.lock -r plc/requirements.lock -r plc/requirements.modbus.lock
+
+      - name: Install browser test runtime
+        run: |
+          npm install --prefix /tmp/anvil-playwright --no-save playwright@1.55.0
+          node /tmp/anvil-playwright/node_modules/playwright/cli.js install --with-deps chromium
 
       - name: Compile Python sources
-        run: python -m compileall -q backend plc integration test_manual.py
+        run: python -m compileall -q backend plc integration docker_proxy test_manual.py
 
       - name: Run unit tests
         run: |
+          node integration/scada_trend_test.mjs
           python -m unittest discover -s plc/tests -v
           python -m unittest discover -s backend/tests -v
+          python -m unittest discover -s docker_proxy/tests -v
+
+      - name: Validate Docker Compose policy gateway
+        run: |
+          docker compose config -q
+          ANVIL_DOCKER_SOCKET=/run/user/1001/docker.sock \
+          ANVIL_DOCKER_API_USER=1001:1001 \
+          docker compose config --format json > /tmp/anvil-compose-rootless.json
+          python - <<'PY'
+          import json
+
+          with open('/tmp/anvil-compose-rootless.json', encoding='utf-8') as compose_file:
+              service = json.load(compose_file)['services']['docker-api']
+
+          socket_mounts = [
+              mount for mount in service['volumes']
+              if mount['target'] == '/var/run/docker.sock'
+          ]
+          assert len(socket_mounts) == 1
+          assert socket_mounts[0]['source'] == '/run/user/1001/docker.sock'
+          assert str(service['user']) == '1001:1001'
+          PY
+
+      - name: Build Docker API gateway
+        run: docker build -t anvil/docker-api-gate:ci ./docker_proxy
 
       - name: Build runtime images
         run: |
           docker build -t anvil/plc-s7:ci ./plc
+          docker build -t anvil/capture:ci -f plc/Dockerfile.capture ./plc
+          docker build -t anvil/modbus-tcp:ci -f plc/Dockerfile.modbus ./plc
+          docker build -t anvil/field:ci -f plc/Dockerfile.field ./plc
+          docker build -t anvil/egress-proxy:ci -f plc/Dockerfile.egress ./plc
+          docker build -t anvil/protocol-ingress:ci -f plc/Dockerfile.ingress ./plc
+          docker build -t anvil/scada:ci -f plc/Dockerfile.scada ./plc
           docker build -t anvil/backend:ci ./backend
+
+      - name: Verify backend confinement and private SQLite
+        run: python integration/backend_security_smoke.py --image anvil/backend:ci
+
+      - name: Exercise exported Compose ingress relays
+        run: |
+          ANVIL_PLC_IMAGE=anvil/plc-s7:ci \
+          ANVIL_MODBUS_IMAGE=anvil/modbus-tcp:ci \
+          ANVIL_INGRESS_IMAGE=anvil/protocol-ingress:ci \
+          PYTHONPATH=backend python integration/external_bundle_smoke.py
+
+      - name: Verify field valve flow balance in an isolated container
+        run: python integration/field_valve_balance_smoke.py --image anvil/field:ci
+
+      - name: Verify reproducible field sensor noise in isolated containers
+        run: python integration/field_noise_seed_smoke.py --image anvil/field:ci
+
+      - name: Verify SCADA durable history survives runtime recreation
+        run: python integration/scada_history_buffer_smoke.py --image anvil/scada:ci
+
+      - name: Generate container SBOMs and build provenance
+        run: python integration/container_sbom.py --output-dir artifacts/container-supply-chain
+
+      - name: Archive container SBOMs and build provenance
+        uses: actions/upload-artifact@v7
+        with:
+          name: anvil-container-supply-chain-${{ github.sha }}
+          path: artifacts/container-supply-chain/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Exercise confined protocol runtimes through Docker API gateway
+        run: |
+          docker run -d --name anvil-ci-docker-api \
+            -p 127.0.0.1:12375:12375 \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -e ANVIL_ALLOWED_IMAGES=anvil/plc-s7:ci,anvil/modbus-tcp:ci,anvil/field:ci,anvil/scada:ci,anvil/egress-proxy:ci,anvil/protocol-ingress:ci,anvil/capture:ci \
+            -e ANVIL_EGRESS_IMAGE=anvil/egress-proxy:ci \
+            -e ANVIL_INGRESS_IMAGE=anvil/protocol-ingress:ci \
+            -e ANVIL_SCADA_IMAGE=anvil/scada:ci \
+            anvil/docker-api-gate:ci
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:12375/health; then break; fi
+            sleep 1
+          done
+          DOCKER_HOST=tcp://127.0.0.1:12375 \
+          ANVIL_DOCKER_INSPECT_HOST=unix:///var/run/docker.sock \
+          ANVIL_PLC_IMAGE=anvil/plc-s7:ci \
+          ANVIL_MODBUS_IMAGE=anvil/modbus-tcp:ci \
+          ANVIL_FIELD_IMAGE=anvil/field:ci \
+          ANVIL_EGRESS_IMAGE=anvil/egress-proxy:ci \
+          ANVIL_INGRESS_IMAGE=anvil/protocol-ingress:ci \
+          PYTHONPATH=backend python integration/docker_security_protocol_smoke.py
+
+      - name: Exercise Modbus TCP protocol
+        run: python integration/modbus_protocol_test.py
+
+      - name: Exercise isolated workstation egress allowlist
+        run: |
+          ANVIL_EGRESS_IMAGE=anvil/egress-proxy:ci \
+          ANVIL_FIELD_IMAGE=anvil/field:ci \
+          python integration/egress_proxy_smoke.py
+
+      - name: Exercise cross-zone routes and configured TCP latency
+        run: |
+          ANVIL_PLC_IMAGE=anvil/plc-s7:ci \
+          ANVIL_VIRTUAL_IMAGE=anvil/plc-s7:ci \
+          ANVIL_SCADA_IMAGE=anvil/scada:ci \
+          ANVIL_HMI_IMAGE=anvil/scada:ci \
+          ANVIL_MODBUS_IMAGE=anvil/modbus-tcp:ci \
+          PYTHONPATH=backend python integration/tcp_route_smoke.py
+
+      - name: Exercise Modbus RTU through private serial tunnel
+        run: |
+          ANVIL_MODBUS_IMAGE=anvil/modbus-tcp:ci \
+          ANVIL_SCADA_IMAGE=anvil/scada:ci \
+          ANVIL_HMI_IMAGE=anvil/scada:ci \
+          PYTHONPATH=backend python integration/modbus_rtu_smoke.py
+
+      - name: Exercise SCADA acquisition, trends and alarms
+        run: |
+          ANVIL_PLC_IMAGE=anvil/plc-s7:ci \
+          ANVIL_MODBUS_IMAGE=anvil/modbus-tcp:ci \
+          ANVIL_SCADA_IMAGE=anvil/scada:ci \
+          PYTHONPATH=backend python integration/scada_smoke.py
+
+      - name: Exercise isolated packet capture and PCAP export
+        run: |
+          DOCKER_HOST=tcp://127.0.0.1:12375 \
+          ANVIL_DOCKER_INSPECT_HOST=unix:///var/run/docker.sock \
+          ANVIL_PLC_IMAGE=anvil/plc-s7:ci \
+          ANVIL_CAPTURE_IMAGE=anvil/capture:ci \
+          PYTHONPATH=backend python integration/packet_capture_smoke.py
+
+      - name: Exercise scheduled S7 route disruption and objective scoring
+        run: |
+          ANVIL_PLC_IMAGE=anvil/plc-s7:ci \
+          ANVIL_SCADA_IMAGE=anvil/scada:ci \
+          ANVIL_FIELD_IMAGE=anvil/field:ci \
+          PYTHONPATH=backend python integration/exercise_smoke.py
+
+      - name: Exercise PLC function block over S7
+        run: |
+          ANVIL_PLC_IMAGE=anvil/plc-s7:ci \
+          PYTHONPATH=backend python integration/control_logic_smoke.py
 
       - name: Start the S7 integration target
         run: |
-          PLC_CONFIG="$(python -c 'import json; print(json.dumps(json.load(open("example_config.json"))))')"
+          PLC_CONFIG="$(python -c 'import json; p=json.load(open("example_config.json")); p["response_delay_ms"]=150; print(json.dumps(p))')"
           docker run -d --name anvil-ci-plc -p 1102:102 -e PLC_CONFIG="$PLC_CONFIG" anvil/plc-s7:ci
 
       - name: Exercise the S7 protocol
-        run: python integration/s7_smoke.py --port 1102
+        run: python integration/s7_smoke.py --port 1102 --minimum-delay-ms 140 --container-name anvil-ci-plc
+
+      - name: Exercise S7 peer links and communication loss
+        run: |
+          BOOTSTRAP_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+          TEST_PASSWORD="$(python -c 'import secrets; print(secrets.token_urlsafe(24))')"
+          docker run -d --name anvil-ci-backend -p 127.0.0.1:8004:8000 \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -e ANVIL_DATABASE_URL=sqlite:////tmp/anvil-ci.db \
+            -e ANVIL_BOOTSTRAP_TOKEN="$BOOTSTRAP_TOKEN" \
+            -e ANVIL_PLC_IMAGE=anvil/plc-s7:ci \
+            -e ANVIL_MODBUS_IMAGE=anvil/modbus-tcp:ci \
+            -e ANVIL_SCADA_IMAGE=anvil/scada:ci \
+            -e ANVIL_HMI_IMAGE=anvil/scada:ci \
+            -e ANVIL_VIRTUAL_IMAGE=anvil/plc-s7:ci \
+            -e ANVIL_ENGINEERING_IMAGE=anvil/scada:ci \
+            -e ANVIL_EGRESS_IMAGE=anvil/egress-proxy:ci \
+            -e ANVIL_INGRESS_IMAGE=anvil/protocol-ingress:ci \
+            -e ANVIL_CLEANUP_ORPHANS=false anvil/backend:ci
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8004/api/ready; then break; fi
+            sleep 1
+          done
+          ANVIL_TEST_EMAIL=ci-admin@example.test \
+          ANVIL_TEST_PASSWORD="$TEST_PASSWORD" \
+          ANVIL_BOOTSTRAP_TOKEN="$BOOTSTRAP_TOKEN" \
+          python integration/s7_links_smoke.py --base-url http://127.0.0.1:8004
+          ANVIL_TEST_EMAIL=ci-admin@example.test \
+          ANVIL_TEST_PASSWORD="$TEST_PASSWORD" \
+          ANVIL_BOOTSTRAP_TOKEN="$BOOTSTRAP_TOKEN" \
+          python integration/docker_network_smoke.py --base-url http://127.0.0.1:8004
+          ANVIL_TEST_EMAIL=ci-admin@example.test \
+          ANVIL_TEST_PASSWORD="$TEST_PASSWORD" \
+          ANVIL_BOOTSTRAP_TOKEN="$BOOTSTRAP_TOKEN" \
+          python integration/scada_historian_smoke.py --base-url http://127.0.0.1:8004
+          ANVIL_TEST_EMAIL=ci-admin@example.test \
+          ANVIL_TEST_PASSWORD="$TEST_PASSWORD" \
+          ANVIL_BOOTSTRAP_TOKEN="$BOOTSTRAP_TOKEN" \
+          python integration/deployment_bundle_smoke.py --base-url http://127.0.0.1:8004
+          DOCKER_HOST=tcp://127.0.0.1:12375 \
+          ANVIL_PLC_IMAGE=anvil/plc-s7:ci \
+          ANVIL_VIRTUAL_IMAGE=anvil/plc-s7:ci \
+          PYTHONPATH=backend python integration/deployment_recovery_smoke.py
+          DOCKER_HOST=tcp://127.0.0.1:12375 \
+          ANVIL_PLC_IMAGE=anvil/plc-s7:ci \
+          ANVIL_VIRTUAL_IMAGE=anvil/plc-s7:ci \
+          PYTHONPATH=backend python integration/node_recovery_smoke.py
+          ANVIL_TEST_EMAIL=ci-admin@example.test \
+          ANVIL_TEST_PASSWORD="$TEST_PASSWORD" \
+          ANVIL_BOOTSTRAP_TOKEN="$BOOTSTRAP_TOKEN" \
+          python integration/process_pipe_smoke.py --base-url http://127.0.0.1:8004
+          ANVIL_TEST_EMAIL=ci-admin@example.test \
+          ANVIL_TEST_PASSWORD="$TEST_PASSWORD" \
+          ANVIL_BOOTSTRAP_TOKEN="$BOOTSTRAP_TOKEN" \
+          python integration/egress_scenario_smoke.py --base-url http://127.0.0.1:8004
+          ANVIL_BASE_URL=http://127.0.0.1:8004 \
+          ANVIL_PLAYWRIGHT_PATH=/tmp/anvil-playwright/node_modules/playwright \
+          ANVIL_TEST_EMAIL=ci-admin@example.test \
+          ANVIL_TEST_PASSWORD="$TEST_PASSWORD" \
+          node integration/evidence_bundle_ui.cjs
 
       - name: Show PLC logs on failure
         if: failure()
-        run: docker logs anvil-ci-plc || true
+        run: |
+          docker logs anvil-ci-plc || true
+          docker logs anvil-ci-backend || true
+          docker logs anvil-ci-docker-api || true
 
       - name: Remove integration target
         if: always()
-        run: docker rm -f anvil-ci-plc || true
+        run: docker rm -f anvil-ci-plc anvil-ci-backend anvil-ci-docker-api || true

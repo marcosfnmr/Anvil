@@ -43,7 +43,7 @@ button {
 
 .app-shell {
   display: grid;
-  grid-template-rows: 76px minmax(0, 1fr);
+  grid-template-rows: 62px minmax(0, 1fr);
   width: 100%;
   height: 100%;
 }
@@ -54,8 +54,8 @@ button {
   display: grid;
   grid-template-columns: 230px minmax(360px, 1fr) auto;
   align-items: center;
-  gap: 24px;
-  padding: 0 20px;
+  gap: 16px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--line);
   background: rgba(15, 19, 23, 0.96);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.22);
@@ -70,17 +70,11 @@ button {
 }
 
 .brand-mark {
-  display: grid;
+  display: block;
   width: 40px;
   height: 40px;
-  place-items: center;
-  border: 1px solid #d9872c;
-  border-radius: 8px 8px 14px 8px;
-  background: linear-gradient(145deg, #ffb653, #c66d1d);
-  color: #17110a;
-  font-size: 21px;
-  font-weight: 900;
-  box-shadow: 0 0 28px rgba(244, 163, 64, 0.2);
+  color: #f3a542;
+  filter: drop-shadow(0 2px 8px rgba(244, 163, 64, 0.24));
 }
 
 .brand strong,
@@ -105,6 +99,8 @@ button {
   grid-template-columns: minmax(180px, 360px) minmax(150px, 210px);
   gap: 10px;
 }
+
+.scenario-tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
 
 .scenario-meta label,
 .field {
@@ -226,6 +222,10 @@ select:focus {
 .status-running {
   border-color: rgba(85, 209, 139, 0.35);
   color: var(--success);
+}
+
+.status-paused .status-dot {
+  background: var(--warning, #d89a27);
 }
 
 .status-deploying,
@@ -589,9 +589,29 @@ select:focus {
 
 .drawflow-node.runtime-error .node-state,
 .drawflow-node.runtime-exited .node-state,
-.drawflow-node.runtime-dead .node-state {
+.drawflow-node.runtime-dead .node-state,
+.drawflow-node.runtime-unhealthy .node-state,
+.drawflow-node.runtime-missing .node-state {
   background: var(--danger);
   box-shadow: 0 0 10px var(--danger);
+}
+
+.drawflow-node.runtime-starting .node-state,
+.drawflow-node.runtime-restarting .node-state {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.node-health-status { display: block; margin: 4px 0; color: var(--accent-bright); }
+.node-runtime-error { margin: 5px 0; padding: 7px; border-left: 3px solid var(--danger); background: var(--panel-raised); color: var(--text); font-size: 12px; overflow-wrap: anywhere; }
+
+.node-runtime-metrics {
+  display: block;
+  margin: 4px 8px 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .device-node-body {
@@ -728,6 +748,19 @@ select:focus {
   text-transform: uppercase;
 }
 
+.service-endpoint {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  overflow-wrap: anywhere;
+}
+
+.service-endpoint code { color: var(--accent); font-size: 12px; }
+.service-endpoint small, .service-endpoint p { margin: 0; color: var(--muted); font-size: 11px; }
+
 .component-actions {
   display: flex;
   gap: 5px;
@@ -770,11 +803,26 @@ select:focus {
   letter-spacing: 0.06em;
 }
 
+.component-card-actions { display: flex; align-items: center; gap: 6px; }
+
 .component-card-body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 9px;
   padding: 10px;
+}
+
+.sequence-step-list {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+}
+
+.sequence-step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
 }
 
 .remove-component,
@@ -872,3 +920,5 @@ select:focus {
     display: none;
   }
 }
+/* Live, operable HMI points */
+.hmi-live-grid{display:grid;gap:.65rem}.hmi-point{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:.35rem .65rem;padding:.7rem;border:1px solid var(--line);border-radius:.65rem;background:var(--panel-raised)}.hmi-point>div{display:grid;gap:.15rem;min-width:0}.hmi-point small{color:var(--muted);font-size:.78rem;overflow-wrap:anywhere}.hmi-point output{font-variant-numeric:tabular-nums;font-weight:650}.hmi-command{display:flex;align-items:center;gap:.35rem}.hmi-command input[type=number]{width:6rem;min-height:2.2rem}.hmi-command input[type=checkbox]{width:1.1rem;height:1.1rem}.hmi-readonly{grid-column:2/4}@media(max-width:520px){.hmi-point{grid-template-columns:minmax(0,1fr) auto}.hmi-point>div{grid-column:1/-1}.hmi-readonly{grid-column:2}}

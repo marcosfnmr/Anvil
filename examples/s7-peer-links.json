@@ -1,0 +1,23 @@
+{
+  "name": "Dos PLCs con intercambio S7",
+  "network": { "subnet": "172.30.243.0/24" },
+  "devices": [
+    {
+      "node_id": "sender", "device_type": "plc-s7", "name": "PLC emisor", "ip": "172.30.243.10",
+      "config": { "components": [
+        { "type": "valve", "name": "en_marcha", "initial_state": false },
+        { "type": "analog_sensor", "name": "presion", "unit": "bar", "min_value": 20, "max_value": 40, "simulation": { "mode": "constant" } }
+      ] }
+    },
+    {
+      "node_id": "receiver", "device_type": "plc-s7", "name": "PLC receptor", "ip": "172.30.243.11",
+      "config": { "components": [
+        { "type": "remote_input", "name": "marcha_remota", "source_node_id": "sender", "source_address": "DB1.DBX0.0", "source_name": "en_marcha", "data_type": "BOOL" },
+        { "type": "remote_input", "name": "presion_remota", "source_node_id": "sender", "source_address": "DB1.DBD2", "source_name": "presion", "data_type": "REAL", "unit": "bar", "stale_behavior": "force_off" },
+        { "type": "motor", "name": "alarma_presion" }
+      ], "control_rules": [
+        { "name": "Alarma de presión", "input_component": "presion_remota", "output_component": "alarma_presion", "mode": "above", "setpoint": 25, "hysteresis": 2 }
+      ] }
+    }
+  ]
+}

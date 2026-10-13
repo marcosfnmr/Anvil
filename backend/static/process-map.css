@@ -1,0 +1,79 @@
+.process-fields { position: absolute; inset: 0; pointer-events: none; }
+.process-fields[hidden] { display: none; }
+.field-node { position: absolute; width: 230px; min-height: 112px; border: 1px solid #536879; border-radius: 12px; background: #15212d; padding: 12px; pointer-events: auto; cursor: grab; color: #edf4fa; }
+.field-node:focus-visible { outline: 3px solid #ffd08a; outline-offset: 4px; }
+.field-node header { display: flex; gap: 10px; align-items: center; }
+.field-node strong { display: block; overflow-wrap: anywhere; }
+.field-node small { display: block; color: #afbfcd; font-size: 11px; }
+.field-icon { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; border: 1px solid #788fa4; border-radius: 50%; font-weight: 700; }
+.field-node[data-state=on] { border-color: #60d7ae; }
+.field-node[data-state=on] .field-icon { background: #235d4b; color: #b9ffe4; }
+.field-node[data-state=off] .field-icon { background: #304154; }
+.field-node[data-state=stale], .field-node[data-state=error] { border-color: #ffbd74; }
+.field-values { white-space: pre-line; font-size: 12px; line-height: 1.5; padding: 10px 0; color: #e5f0fa; }
+.field-node footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.field-node footer small { width: 100%; order: -1; }
+.field-node button { border: 1px solid #718698; background: #233244; color: #fff; border-radius: 6px; padding: 5px 8px; font-size: 12px; cursor: pointer; }
+.process-links { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; pointer-events: none; }
+.map-link path { fill: none; stroke-width: 2; }
+.map-link.io path { stroke: #8196a9; }
+.map-link.s7 path { stroke: #6ccbed; }
+.map-link.hmi path { stroke: #c9a0ff; stroke-dasharray: 7 5; }
+.map-link.scada path { stroke: #73d9b1; stroke-dasharray: 2 4; stroke-width: 2.5; }
+.map-link.scada.blocked path { stroke: #ff8a8a; stroke-dasharray: 5 5; }
+.map-link.ethernet path { stroke: #d9b96e; stroke-width: 2.5; stroke-dasharray: 3 6; }
+.map-link.ethernet text { fill: #f3d98b; }
+.map-link.control path { stroke: #f4a261; stroke-width: 2.5; stroke-dasharray: 2 5; }
+.map-link.control text, .arrow-control, .map-legend .control-legend { fill: #ffc184; color: #ffc184; }
+.map-link.tcp-route path { stroke: #ffba68; stroke-width: 2.5; stroke-dasharray: 10 4; }
+.map-link.tcp-route.blocked path { stroke: #ff7285; stroke-dasharray: 5 4; }
+.arrow-tcp-route { fill: #ffba68; }
+.map-link.tcp-route text { fill: #ffd99f; }
+.map-link.tcp-route.blocked text { fill: #ff9aa6; }
+.map-link.s7.good path { stroke: #65ddb1; }
+.map-link.s7.stale path { stroke: #ffbd74; stroke-dasharray: 4 4; }
+.map-link.s7.blocked path { stroke: #ff8a8a; stroke-dasharray: 5 5; }
+.map-link text { fill: #e7f0f8; stroke: #101923; stroke-width: 4px; paint-order: stroke; font-size: 11px; text-anchor: middle; }
+.arrow-io { fill: #8196a9; } .arrow-s7 { fill: #6ccbed; } .arrow-hmi { fill: #c9a0ff; }
+.arrow-scada { fill: #73d9b1; }
+.process-map-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.process-map-controls label { display: flex; align-items: center; gap: 6px; color: #dee8f0; font-size: 13px; }
+.map-legend { color: #afbfcd; font-size: 12px; } .map-legend span:first-child { color: #6ccbed; }
+.process-map-controls { pointer-events: auto; padding: 8px; border: 1px solid #435567; border-radius: 10px; background: #111c27; }
+.network-link-editor { position: relative; color: #dee8f0; font-size: 12px; }
+.network-link-editor summary { cursor: pointer; padding: 7px 10px; border: 1px solid #536879; border-radius: 7px; }
+.network-link-body { position: absolute; z-index: 10; right: 0; top: 34px; width: min(340px, 82vw); padding: 12px; border: 1px solid #536879; border-radius: 9px; background: #111c27; box-shadow: 0 12px 32px #0009; }
+.network-link-body p { margin: 0 0 10px; color: #bbc9d5; line-height: 1.45; }
+.network-link-body h3 { margin: 10px 0 6px; color: #edf4fa; font-size: 13px; }
+.network-link-body hr { margin: 14px 0; border: 0; border-top: 1px solid #435567; }
+.network-link-body label { display: grid; gap: 4px; margin: 8px 0; }
+.network-link-body select { min-width: 0; width: 100%; padding: 7px; border: 1px solid #62788b; border-radius: 6px; color: #f3f7fb; background: #172431; }
+.network-link-body input[type=number] { width: 100%; box-sizing: border-box; padding: 7px; border: 1px solid #62788b; border-radius: 6px; color: #f3f7fb; background: #172431; }
+.network-link-body ul { max-height: 150px; overflow: auto; padding-left: 20px; }
+.network-link-body li { padding: 4px 0; }
+.network-link-body li button { margin-left: 6px; padding: 3px 6px; }
+.canvas-toolbar { flex-wrap: wrap; align-items: flex-start; }
+.drawflow-canvas .drawflow { transform-origin: 0 0; }
+.viewport-controls { display: flex; align-items: center; gap: 6px; }
+.viewport-controls button { padding: 7px 10px; }
+.viewport-controls output { min-width: 48px; text-align: center; color: #edf4fa; font-size: 12px; }
+[data-pan-mode][aria-pressed=true] { border-color: #ffba68; background: #65431f; }
+.drawflow-canvas.pan-mode, .drawflow-canvas.pan-mode .field-node, .drawflow-canvas.pan-mode .drawflow-node { cursor: grab; }
+.drawflow-canvas.is-panning, .drawflow-canvas.is-panning * { cursor: grabbing; }
+
+.node-field-object { border-color: #68d4b2 !important; }
+.field-node-ports { display: grid; gap: 4px; padding: 8px 0; font-size: 11px; color: #bfeada; }
+.field-live { font-size: 12px; padding: 8px 0; line-height: 1.5; color: #e5f0fa; }
+.field-port { padding: 12px 0; border-bottom: 1px solid #435567; }
+.field-port label { display: grid; gap: 6px; margin: 8px 0; }
+.field-port button, .independent-field button { border: 1px solid #718698; background: #233244; color: #fff; border-radius: 6px; padding: 7px 10px; cursor: pointer; }
+.field-signal path { stroke: #68d4b2; }
+.field-signal.route-enabled path { stroke: #82aaff; stroke-dasharray: 8 4; }
+.field-signal.blocked path { stroke: #ff7285; stroke-dasharray: 5 4; }
+.field-signal.blocked text { fill: #ff9aa6; }
+.field-signal.fault path { stroke: #ff7285; stroke-dasharray: 5 4; }
+.field-signal.fault text { fill: #ff9aa6; }
+.field-process path { stroke: #7bb6ff; stroke-width: 4; stroke-dasharray: 9 5; }
+.field-process text { fill: #b9d8ff; }
+.physical-port { color: #acd0ff; }
+.field-signal.stale path, .field-signal.waiting path { stroke: #ffbd74; stroke-dasharray: 5 4; }

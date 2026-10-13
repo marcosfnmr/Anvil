@@ -1,5 +1,6 @@
 """Liveness and readiness endpoints."""
 
+import os
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
@@ -16,7 +17,11 @@ SessionDependency = Annotated[Session, Depends(get_session)]
 
 @router.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    result = {"status": "ok"}
+    instance_id = os.environ.get("ANVIL_INSTANCE_ID", "").strip()
+    if instance_id:
+        result["instance_id"] = instance_id
+    return result
 
 
 @router.get("/ready")

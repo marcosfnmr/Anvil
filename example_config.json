@@ -25,6 +25,36 @@
         "period_seconds": 30,
         "noise": 0.1
       }
+    },
+    {
+      "type": "io_channel",
+      "name": "marca_demo",
+      "db": 1,
+      "area": "M",
+      "direction": "output",
+      "data_type": "BOOL",
+      "byte_offset": 0,
+      "bit_offset": 2
+    },
+    {
+      "type": "io_channel",
+      "name": "entrada_demo",
+      "db": 1,
+      "area": "I",
+      "direction": "input",
+      "data_type": "BOOL",
+      "byte_offset": 0,
+      "bit_offset": 0
+    },
+    {
+      "type": "io_channel",
+      "name": "salida_demo",
+      "db": 1,
+      "area": "Q",
+      "direction": "output",
+      "data_type": "BOOL",
+      "byte_offset": 0,
+      "bit_offset": 3
     }
   ]
 }

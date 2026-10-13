@@ -1,0 +1,86 @@
+services:
+  docker-api:
+    build:
+      context: ./docker_proxy
+    image: anvil/docker-api-gate:srs-exec-scope-20261008
+    environment:
+      ANVIL_ALLOWED_IMAGES: anvil/plc-s7:demo-20261008,anvil/plc-s7:demo-20261008-ctu1,anvil/plc-s7:demo-20261008-seq1,anvil/plc-s7:demo-20261008-quality1,anvil/plc-s7:retention-local-20261008,anvil/plc-s7:srs-tof-20261008,anvil/plc-s7:srs-fault-prob-20261008,anvil/modbus-tcp:dev,anvil/field:dev,anvil/field:rf23-sensor-fault-20261008,anvil/scada:vfd-local,anvil/scada:demo-20261008-alarm-delay1,anvil/capture:pcap-check,anvil/egress-proxy:ci,anvil/protocol-ingress:dev
+      ANVIL_PLC_IMAGE: anvil/plc-s7:srs-fault-prob-20261008
+      ANVIL_MODBUS_IMAGE: anvil/modbus-tcp:dev
+      ANVIL_CAPTURE_IMAGE: anvil/capture:pcap-check
+      ANVIL_EGRESS_IMAGE: anvil/egress-proxy:ci
+      ANVIL_INGRESS_IMAGE: anvil/protocol-ingress:dev
+    volumes:
+      - ${ANVIL_DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
+    user: ${ANVIL_DOCKER_API_USER:-65534:1001}
+    networks:
+      - docker-control
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 32
+    mem_limit: 128m
+    cpus: 0.5
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=8m
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:12375/health', timeout=1)"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+      start_period: 2s
+
+  backend:
+    build:
+      context: ./backend
+    image: anvil/backend:srs-rnf07-validation-path-20261008
+    environment:
+      ANVIL_DATABASE_URL: sqlite:////data/anvil.db
+      ANVIL_DATA_DIR: /data
+      ANVIL_BACKEND_UID: ${ANVIL_BACKEND_UID:-65534}
+      ANVIL_BACKEND_GID: ${ANVIL_BACKEND_GID:-65534}
+      ANVIL_COOKIE_SECURE: ${ANVIL_COOKIE_SECURE:-false}
+      ANVIL_PLC_IMAGE: anvil/plc-s7:srs-fault-prob-20261008
+      ANVIL_MODBUS_IMAGE: anvil/modbus-tcp:dev
+      ANVIL_FIELD_IMAGE: anvil/field:rf23-sensor-fault-20261008
+      ANVIL_SCADA_IMAGE: anvil/scada:demo-20261008-alarm-delay1
+      ANVIL_HMI_IMAGE: anvil/scada:demo-20261008-alarm-delay1
+      ANVIL_PARTICIPANT_IMAGE: anvil/scada:demo-20261008-alarm-delay1
+      ANVIL_ENGINEERING_IMAGE: anvil/scada:demo-20261008-alarm-delay1
+      ANVIL_VIRTUAL_IMAGE: anvil/plc-s7:demo-20261008-quality1
+      ANVIL_CAPTURE_IMAGE: anvil/capture:pcap-check
+      ANVIL_EGRESS_IMAGE: anvil/egress-proxy:ci
+      ANVIL_INGRESS_IMAGE: anvil/protocol-ingress:dev
+      ANVIL_SCENARIO_MAX_NODES: "64"
+      ANVIL_SCENARIO_MAX_MEMORY_BYTES: "4294967296"
+      ANVIL_SCENARIO_MAX_NANO_CPUS: "15000000000"
+      ANVIL_CLEANUP_ORPHANS: "false"
+      ANVIL_BOOTSTRAP_TOKEN: ${ANVIL_BOOTSTRAP_TOKEN:-}
+      DOCKER_HOST: tcp://docker-api:12375
+    depends_on:
+      docker-api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8008:8000"
+    volumes:
+      - demo-data:/data
+    restart: unless-stopped
+    stop_grace_period: 15s
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER, SETGID, SETUID]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=512m
+    networks:
+      - default
+      - docker-control
+
+networks:
+  docker-control:
+    internal: true
+
+volumes:
+  demo-data:

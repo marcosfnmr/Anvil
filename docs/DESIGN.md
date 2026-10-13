@@ -12,7 +12,7 @@
 | --------- | ------------------------------------------------ |
 | PLC       | Python 3.11 + python-snap7 (>= 3.0)              |
 | Backend   | FastAPI + Pydantic + SQLModel + docker-py        |
-| Frontend  | HTML + CSS + JavaScript vanilla + Drawflow (CDN) |
+| Frontend  | HTML + CSS + JavaScript vanilla + Drawflow local |
 | Orquest.  | Docker Compose (dev) + docker-py (runtime)       |
 | Persist.  | SQLite                                           |
 
@@ -78,6 +78,8 @@ Lo que recibe cada contenedor `plc-s7` al arrancar, como JSON en una env var:
 
 ### 2.2 Escenario (persistido en SQLite)
 
+El campo `canvas` conserva el layout de Drawflow. La interfaz reconstruye los nodos desde `devices`, usando solo las posiciones guardadas; no importa HTML ni configuración duplicada del canvas. Es opcional en solicitudes antiguas; si falta, la interfaz genera el layout de respaldo. Los enlaces funcionales entre PLCs se configuran como componentes `remote_input`, según [S7_LINKS.md](S7_LINKS.md).
+
 ```json
 {
   "id": "uuid4",
@@ -85,6 +87,7 @@ Lo que recibe cada contenedor `plc-s7` al arrancar, como JSON en una env var:
   "network": {
     "subnet": "192.168.100.0/24"
   },
+  "canvas": { "data": {} },
   "devices": [
     {
       "node_id": "node-1",
@@ -115,7 +118,7 @@ escenario, en orden de declaración de componentes por cada DB.
 ```
 POST   /api/scenarios                    crear
 GET    /api/scenarios                    listar
-GET    /api/scenarios/{id}               detalle
+GET    /api/scenarios/{id}               detalle (incluye canvas)
 PUT    /api/scenarios/{id}               actualizar topología
 DELETE /api/scenarios/{id}               borrar
 
@@ -310,6 +313,6 @@ Cada fase entrega algo verificable de forma independiente.
 - `PLC_CONFIG` se pasa **solo como env var** (JSON string). No volúmenes.
 - El backend calcula offsets automáticamente. El usuario nunca los ve.
 - Un solo servicio FastAPI sirve API + frontend. Sin CORS.
-- Sin build step en el frontend. Vanilla JS + CDN.
+- Sin build step en el frontend. Vanilla JS + dependencias locales.
 - Docker socket montado en el backend (`/var/run/docker.sock`).
 - Red por escenario, no compartida.

@@ -1,0 +1,49 @@
+{
+  "templates": [
+    {
+      "id": "water-treatment-network-demo",
+      "file": "demo-planta-agua.json",
+      "title": "Planta de agua · comunicaciones",
+      "category": "Comunicaciones industriales",
+      "summary": "Topología de demostración con PLCs S7, Modbus TCP, HMI y firewall de operaciones API; no modela proceso hidráulico.",
+      "complexity": "Intermedia",
+      "tags": ["comunicaciones", "S7", "Modbus TCP", "HMI", "SCADA"]
+    },
+    {
+      "id": "closed-loop-water-process",
+      "file": "planta-agua-lazo-cerrado.json",
+      "title": "Planta de agua · lazo hidráulico",
+      "category": "Proceso y control",
+      "summary": "Bomba, depósito, válvulas y transmisor con proceso hidráulico, bloque PLC de histéresis, HMI, SCADA y Modbus TCP.",
+      "complexity": "Avanzada",
+      "tags": ["proceso físico", "lazo cerrado", "S7", "Modbus TCP", "HMI", "SCADA"]
+    },
+    {
+      "id": "connected-pumping-station",
+      "file": "demo-bombeo-conectado.json",
+      "title": "Estación de bombeo conectada",
+      "category": "Comunicaciones industriales",
+      "summary": "Dos PLC S7, un dispositivo Modbus TCP, HMI y política de acceso para explorar protocolos y telemetría.",
+      "complexity": "Intermedia",
+      "tags": ["S7", "Modbus TCP", "HMI", "SCADA"]
+    },
+    {
+      "id": "two-plc-s7-link",
+      "file": "dos-plc-s7.json",
+      "title": "Intercambio entre dos PLC S7",
+      "category": "Comunicaciones industriales",
+      "summary": "PLC emisor y receptor con señales BOOL y REAL transferidas mediante lecturas S7.",
+      "complexity": "Inicial",
+      "tags": ["S7", "enlace PLC-PLC"]
+    },
+    {
+      "id": "field-to-plc-factory",
+      "file": "fabrica-campo-plc.json",
+      "title": "Fábrica con campo independiente",
+      "category": "Instrumentación y control",
+      "summary": "Añade primero bomba, válvula y sensor como objetos de campo; después conecta sus señales a PLC S7 y Modbus.",
+      "complexity": "Inicial",
+      "tags": ["campo independiente", "S7", "Modbus TCP", "HMI"]
+    }
+  ]
+}

@@ -1,0 +1,291 @@
+{
+  "name": "DEMO · Planta de agua OT",
+  "network": {
+    "subnet": "172.30.249.0/24"
+  },
+  "devices": [
+    {
+      "node_id": "plc-proceso",
+      "device_type": "plc-s7",
+      "name": "PLC 1 · Bombeo",
+      "ip": "172.30.249.10",
+      "external_access": false,
+      "external_port": null,
+      "config": {
+        "rack": 0,
+        "slot": 1,
+        "db_size": 32,
+        "components": [
+          {
+            "type": "valve",
+            "name": "Valvula_entrada",
+            "db": 1,
+            "initial_state": false
+          },
+          {
+            "type": "alarm",
+            "name": "Alarma_general",
+            "db": 1,
+            "initial_state": false
+          },
+          {
+            "type": "pump",
+            "name": "Bomba_trasiego",
+            "db": 2,
+            "initial_state": false,
+            "flow_min": 40,
+            "flow_max": 80,
+            "unit": "L/min"
+          },
+          {
+            "type": "analog_sensor",
+            "name": "Temperatura_agua",
+            "db": 3,
+            "unit": "°C",
+            "min_value": 18,
+            "max_value": 28,
+            "simulation": {
+              "mode": "sine_wave",
+              "period_seconds": 20,
+              "noise": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "node_id": "plc-supervision",
+      "device_type": "plc-s7",
+      "name": "PLC 2 · Supervision",
+      "ip": "172.30.249.11",
+      "external_access": false,
+      "external_port": null,
+      "config": {
+        "rack": 0,
+        "slot": 1,
+        "db_size": 32,
+        "components": [
+          {
+            "type": "remote_input",
+            "name": "Valvula_recibida",
+            "db": 1,
+            "data_type": "BOOL",
+            "source_node_id": "plc-proceso",
+            "source_address": "DB1.DBX0.0",
+            "source_name": "Valvula_entrada",
+            "period_ms": 200,
+            "timeout_ms": 1000,
+            "stale_after_ms": 1500,
+            "unit": ""
+          },
+          {
+            "type": "remote_input",
+            "name": "Bomba_recibida",
+            "db": 1,
+            "data_type": "BOOL",
+            "source_node_id": "plc-proceso",
+            "source_address": "DB2.DBX0.0",
+            "source_name": "Bomba_trasiego",
+            "period_ms": 200,
+            "timeout_ms": 1000,
+            "stale_after_ms": 1500,
+            "unit": ""
+          },
+          {
+            "type": "remote_input",
+            "name": "Caudal_recibido",
+            "db": 2,
+            "data_type": "REAL",
+            "source_node_id": "plc-proceso",
+            "source_address": "DB2.DBD2",
+            "source_name": "Bomba_trasiego",
+            "period_ms": 200,
+            "timeout_ms": 1000,
+            "stale_after_ms": 1500,
+            "unit": "L/min"
+          },
+          {
+            "type": "remote_input",
+            "name": "Temperatura_recibida",
+            "db": 2,
+            "data_type": "REAL",
+            "source_node_id": "plc-proceso",
+            "source_address": "DB3.DBD0",
+            "source_name": "Temperatura_agua",
+            "period_ms": 200,
+            "timeout_ms": 1000,
+            "stale_after_ms": 1500,
+            "unit": "°C"
+          },
+          {
+            "type": "motor",
+            "name": "Ventilador_manual",
+            "db": 3,
+            "initial_state": false
+          }
+        ]
+      }
+    },
+    {
+      "node_id": "modbus-dosificacion",
+      "device_type": "modbus-tcp",
+      "name": "Modbus · Dosificacion",
+      "ip": "172.30.249.12",
+      "external_access": false,
+      "external_port": null,
+      "config": {
+        "unit_id": 1,
+        "port": 502,
+        "points": [
+          {
+            "type": "coil",
+            "name": "Dosificador_habilitado",
+            "initial_value": false
+          },
+          {
+            "type": "holding_register",
+            "name": "Consigna_dosis",
+            "initial_value": 250,
+            "unit": "mL"
+          },
+          {
+            "type": "holding_register",
+            "name": "Lote_actual",
+            "initial_value": 7
+          },
+          {
+            "type": "input_register",
+            "name": "Nivel_disponible",
+            "initial_value": 75,
+            "unit": "%"
+          }
+        ]
+      }
+    },
+    {
+      "node_id": "hmi-operacion",
+      "device_type": "hmi",
+      "name": "HMI · Sala de control",
+      "ip": "172.30.249.20",
+      "external_access": false,
+      "external_port": null,
+      "config": {
+        "role": "hmi",
+        "summary": "Lectura conjunta de bombeo, supervision y dosificacion.",
+        "target_node_ids": "plc-proceso,plc-supervision,modbus-dosificacion",
+        "firewall_allow_tcp_ports": []
+      }
+    },
+    {
+      "node_id": "politica-consola",
+      "device_type": "firewall",
+      "name": "Politica · Acceso API",
+      "ip": "172.30.249.30",
+      "external_access": false,
+      "external_port": null,
+      "config": {
+        "role": "firewall",
+        "summary": "Permite S7 y Modbus desde la consola y la HMI. No filtra trafico entre contenedores.",
+        "target_node_ids": "",
+        "firewall_allow_tcp_ports": [
+          102,
+          502
+        ]
+      }
+    }
+  ],
+  "canvas": {
+    "data": {
+      "1": {
+        "data": {
+          "node_id": "plc-proceso"
+        },
+        "pos_x": 100,
+        "pos_y": 110
+      },
+      "2": {
+        "data": {
+          "node_id": "plc-supervision"
+        },
+        "pos_x": 460,
+        "pos_y": 110
+      },
+      "3": {
+        "data": {
+          "node_id": "modbus-dosificacion"
+        },
+        "pos_x": 820,
+        "pos_y": 110
+      },
+      "4": {
+        "data": {
+          "node_id": "hmi-operacion"
+        },
+        "pos_x": 1180,
+        "pos_y": 110
+      },
+      "5": {
+        "data": {
+          "node_id": "politica-consola"
+        },
+        "pos_x": 1180,
+        "pos_y": 370
+      }
+    },
+    "field_positions": {
+      "[\"plc-proceso\",\"valve\",\"Valvula_entrada\",0]": {
+        "x": 100,
+        "y": 290
+      },
+      "[\"plc-proceso\",\"alarm\",\"Alarma_general\",0]": {
+        "x": 100,
+        "y": 460
+      },
+      "[\"plc-proceso\",\"pump\",\"Bomba_trasiego\",0]": {
+        "x": 100,
+        "y": 630
+      },
+      "[\"plc-proceso\",\"analog_sensor\",\"Temperatura_agua\",0]": {
+        "x": 100,
+        "y": 800
+      },
+      "[\"plc-supervision\",\"remote_input\",\"Valvula_recibida\",0]": {
+        "x": 460,
+        "y": 290
+      },
+      "[\"plc-supervision\",\"remote_input\",\"Bomba_recibida\",0]": {
+        "x": 460,
+        "y": 460
+      },
+      "[\"plc-supervision\",\"remote_input\",\"Caudal_recibido\",0]": {
+        "x": 460,
+        "y": 630
+      },
+      "[\"plc-supervision\",\"remote_input\",\"Temperatura_recibida\",0]": {
+        "x": 460,
+        "y": 800
+      },
+      "[\"plc-supervision\",\"motor\",\"Ventilador_manual\",0]": {
+        "x": 460,
+        "y": 970
+      },
+      "[\"modbus-dosificacion\",\"coil\",\"Dosificador_habilitado\",0]": {
+        "x": 820,
+        "y": 290
+      },
+      "[\"modbus-dosificacion\",\"holding_register\",\"Consigna_dosis\",0]": {
+        "x": 820,
+        "y": 460
+      },
+      "[\"modbus-dosificacion\",\"holding_register\",\"Lote_actual\",0]": {
+        "x": 820,
+        "y": 630
+      },
+      "[\"modbus-dosificacion\",\"input_register\",\"Nivel_disponible\",0]": {
+        "x": 820,
+        "y": 800
+      }
+    },
+    "show_components": true
+  }
+}

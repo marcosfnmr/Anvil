@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import math
 import random
 import struct
@@ -12,7 +13,7 @@ from . import register_component
 from .base import Component
 
 
-@register_component("analog_sensor")
+@register_component("analog_sensor", AnalogSensorComponentConfig)
 class AnalogSensor(Component):
     """Write a constant or sinusoidal value to the configured DB offset."""
 
@@ -21,6 +22,11 @@ class AnalogSensor(Component):
     def __init__(self, config: AnalogSensorComponentConfig) -> None:
         super().__init__(config)
         self._elapsed_seconds = 0.0
+        seed = config.simulation.seed
+        if seed is not None:
+            identity = f"anvil-s7-sensor:{seed}:{config.db}:{config.byte_offset}:{config.name}".encode("utf-8")
+            seed = int.from_bytes(hashlib.sha256(identity).digest()[:8], "big")
+        self._random = random.Random(seed)
 
     def initialize(self, db_buffer: bytearray) -> None:
         self._elapsed_seconds = 0.0
@@ -48,6 +54,6 @@ class AnalogSensor(Component):
             value = midpoint
 
         if self.config.simulation.noise:
-            value += random.gauss(0.0, self.config.simulation.noise * value_range)
+            value += self._random.gauss(0.0, self.config.simulation.noise * value_range)
 
         return min(self.config.max_value, max(self.config.min_value, value))

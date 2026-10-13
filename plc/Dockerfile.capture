@@ -1,0 +1,8 @@
+ARG CAPTURE_BASE_IMAGE=docker.io/library/debian:bookworm-slim@sha256:7c7b2c966bc9ee8cedfeef67e0e279108992c77681fa595db4a9d65c06ccc587
+FROM ${CAPTURE_BASE_IMAGE}
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y tcpdump \
+    && rm -rf /var/lib/apt/lists/*
+
+ENTRYPOINT ["tcpdump"]

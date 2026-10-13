@@ -10,6 +10,7 @@ from time import monotonic
 from typing import Any
 
 from fastapi import WebSocket, WebSocketDisconnect
+from fastapi.encoders import jsonable_encoder
 from starlette.concurrency import run_in_threadpool
 
 
@@ -31,7 +32,7 @@ def _event_payload(
         "scenario_id": scenario_id,
         "timestamp": _timestamp(),
         "status": runtime["status"],
-        "containers": runtime.get("containers", []),
+        "containers": jsonable_encoder(runtime.get("containers", [])),
     }
 
 
@@ -42,6 +43,15 @@ def _runtime_signature(runtime: dict[str, Any]) -> tuple[Any, ...]:
                 item.get("node_id"),
                 item.get("name"),
                 item.get("status"),
+                item.get("health_status"),
+                item.get("health_error"),
+                item.get("runtime_error"),
+                item.get("cpu_percent"),
+                item.get("memory_usage_bytes"),
+                item.get("memory_limit_bytes"),
+                item.get("pids"),
+                item.get("resource_metrics_status"),
+                item.get("resource_metrics_sampled_at"),
             )
             for item in runtime.get("containers", [])
         )

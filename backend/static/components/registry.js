@@ -18,3 +18,7 @@ export function getComponentType(type) {
 export function listComponentTypes() {
   return [...COMPONENT_REGISTRY.values()];
 }
+
+export function listComponentTypesForDevice(deviceType) {
+  return listComponentTypes().filter((definition) => !definition.deviceTypes || definition.deviceTypes.includes(deviceType));
+}

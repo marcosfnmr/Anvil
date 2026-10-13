@@ -1,7 +1,8 @@
-import { registerComponentType } from "./registry.js";
+import { registerComponentType } from "./registry.js?v=field-live-3";
 
 registerComponentType("analog_sensor", {
   label: "Sensor analógico",
+  deviceTypes: ["plc-s7"],
   icon: "AI",
   create(index = 1) {
     return {
@@ -15,6 +16,7 @@ registerComponentType("analog_sensor", {
         mode: "sine_wave",
         period_seconds: 30,
         noise: 0,
+        seed: 0,
       },
     };
   },
@@ -48,6 +50,14 @@ registerComponentType("analog_sensor", {
       min: 0,
       max: 1,
       step: 0.01,
+    },
+    {
+      path: "simulation.seed",
+      label: "Semilla reproducible",
+      type: "number",
+      min: 0,
+      max: 4294967295,
+      step: 1,
     },
   ],
 });

@@ -14,12 +14,15 @@ sys.path.insert(0, str(BACKEND_DIR))
 
 from main import create_app  # noqa: E402
 from models.db import get_session  # noqa: E402
+from models.scenario import ScenarioRecord  # noqa: E402
 from routes.scenarios import get_docker_manager  # noqa: E402
 
 
 class EventDockerManager:
+    runtime = {"status": "stopped", "containers": []}
+
     def status(self, scenario_id: str) -> dict:
-        return {"scenario_id": scenario_id, "status": "stopped", "containers": []}
+        return {"scenario_id": scenario_id, **self.runtime}
 
 
 class ScenarioEventTests(unittest.TestCase):
@@ -87,6 +90,34 @@ class ScenarioEventTests(unittest.TestCase):
 
         self.assertEqual(event["type"], "error")
         self.assertIn("was not found", event["detail"])
+
+    def test_websocket_snapshot_includes_planned_node_missing_from_docker(self) -> None:
+        payload = self.payload()
+        payload["devices"].append({
+            "node_id": "plc-secondary", "device_type": "plc-s7", "name": "PLC secundario",
+            "ip": "172.30.120.11", "config": {"components": []},
+        })
+        scenario_id = self.client.post("/api/scenarios", json=payload).json()["id"]
+        with Session(self.engine) as session:
+            record = session.get(ScenarioRecord, scenario_id)
+            record.status = "running"
+            session.add(record)
+            session.commit()
+        EventDockerManager.runtime = {
+            "status": "running",
+            "containers": [{"node_id": "plc-events", "name": "PLC eventos", "status": "running"}],
+        }
+
+        try:
+            with self.client.websocket_connect(f"/api/scenarios/{scenario_id}/events") as websocket:
+                event = websocket.receive_json()
+        finally:
+            EventDockerManager.runtime = {"status": "stopped", "containers": []}
+
+        self.assertEqual(event["type"], "snapshot")
+        self.assertEqual(event["status"], "partial")
+        states = {item["node_id"]: item["status"] for item in event["containers"]}
+        self.assertEqual(states, {"plc-events": "running", "plc-secondary": "missing"})
 
 
 if __name__ == "__main__":

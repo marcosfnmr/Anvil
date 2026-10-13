@@ -18,3 +18,14 @@ export function getNodeType(type) {
 export function listNodeTypes() {
   return [...NODE_REGISTRY.values()];
 }
+
+export function configureNodeCatalog(catalog) {
+  for (const metadata of catalog) {
+    const definition = NODE_REGISTRY.get(metadata.type);
+    if (definition) Object.assign(definition, metadata);
+  }
+}
+
+export function getNodeCatalog() {
+  return [...NODE_REGISTRY.values()].map(({ create, render, className, ...metadata }) => metadata);
+}
